@@ -1,25 +1,27 @@
-import * as dns from 'dns';
+import * as dns from "dns";
 
-import type { Document } from '../../bson.ts';
-import { KerberosClient } from '../../deps.ts';
+import type { Document } from "../../bson.ts";
+import { KerberosClient } from "../../deps.ts";
 import {
   MongoError,
   MongoInvalidArgumentError,
   MongoMissingCredentialsError,
   MongoMissingDependencyError,
-  MongoRuntimeError
-} from '../../error.ts';
-import { Callback, ns } from '../../utils.ts';
-import { AuthContext, AuthProvider } from './auth_provider.ts';
+  MongoRuntimeError,
+} from "../../error.ts";
+import { Callback, ns } from "../../utils.ts";
+import { AuthContext, AuthProvider } from "./auth_provider.ts";
 
 /** @public */
-export const GSSAPICanonicalizationValue = Object.freeze({
-  on: true,
-  off: false,
-  none: 'none',
-  forward: 'forward',
-  forwardAndReverse: 'forwardAndReverse'
-} as const);
+export const GSSAPICanonicalizationValue = Object.freeze(
+  {
+    on: true,
+    off: false,
+    none: "none",
+    forward: "forward",
+    forwardAndReverse: "forwardAndReverse",
+  } as const,
+);
 
 /** @public */
 export type GSSAPICanonicalizationValue =
@@ -34,26 +36,32 @@ type MechanismProperties = {
   SERVICE_REALM?: string;
 };
 
-
-const Kerberos: any = {} // TODO(erfan)
+const Kerberos: any = {}; // TODO(erfan)
 export class GSSAPI extends AuthProvider {
   override auth(authContext: AuthContext, callback: Callback): void {
     const { connection, credentials } = authContext;
-    if (credentials == null)
+    if (credentials == null) {
       return callback(
-        new MongoMissingCredentialsError('Credentials required for GSSAPI authentication')
+        new MongoMissingCredentialsError(
+          "Credentials required for GSSAPI authentication",
+        ),
       );
+    }
     const { username } = credentials;
     function externalCommand(
       command: Document,
-      cb: Callback<{ payload: string; conversationId: any }>
+      cb: Callback<{ payload: string; conversationId: any }>,
     ) {
-      return connection.command(ns('$external.$cmd'), command, undefined, cb);
+      return connection.command(ns("$external.$cmd"), command, undefined, cb);
     }
     makeKerberosClient(authContext, (err, client) => {
       if (err) return callback(err);
-      if (client == null) return callback(new MongoMissingDependencyError('GSSAPI client missing'));
-      client.step('', (err, payload) => {
+      if (client == null) {
+        return callback(
+          new MongoMissingDependencyError("GSSAPI client missing"),
+        );
+      }
+      client.step("", (err, payload) => {
         if (err) return callback(err);
 
         externalCommand(saslStart(payload), (err, result) => {
@@ -62,26 +70,29 @@ export class GSSAPI extends AuthProvider {
           negotiate(client, 10, result.payload, (err, payload) => {
             if (err) return callback(err);
 
-            externalCommand(saslContinue(payload, result.conversationId), (err, result) => {
-              if (err) return callback(err);
-              if (result == null) return callback();
-              finalize(client, username, result.payload, (err, payload) => {
+            externalCommand(
+              saslContinue(payload, result.conversationId),
+              (err, result) => {
                 if (err) return callback(err);
+                if (result == null) return callback();
+                finalize(client, username, result.payload, (err, payload) => {
+                  if (err) return callback(err);
 
-                externalCommand(
-                  {
-                    saslContinue: 1,
-                    conversationId: result.conversationId,
-                    payload
-                  },
-                  (err, result) => {
-                    if (err) return callback(err);
+                  externalCommand(
+                    {
+                      saslContinue: 1,
+                      conversationId: result.conversationId,
+                      payload,
+                    },
+                    (err, result) => {
+                      if (err) return callback(err);
 
-                    callback(undefined, result);
-                  }
-                );
-              });
-            });
+                      callback(undefined, result);
+                    },
+                  );
+                });
+              },
+            );
           });
         });
       });
@@ -89,24 +100,30 @@ export class GSSAPI extends AuthProvider {
   }
 }
 
-function makeKerberosClient(authContext: AuthContext, callback: Callback<KerberosClient>): void {
+function makeKerberosClient(
+  authContext: AuthContext,
+  callback: Callback<KerberosClient>,
+): void {
   const { hostAddress } = authContext.options;
   const { credentials } = authContext;
-  if (!hostAddress || typeof hostAddress.host !== 'string' || !credentials) {
+  if (!hostAddress || typeof hostAddress.host !== "string" || !credentials) {
     return callback(
-      new MongoInvalidArgumentError('Connection must have host and port and credentials defined.')
+      new MongoInvalidArgumentError(
+        "Connection must have host and port and credentials defined.",
+      ),
     );
   }
 
-  if ('kModuleError' in Kerberos) {
-    return callback(Kerberos['kModuleError']);
+  if ("kModuleError" in Kerberos) {
+    return callback(Kerberos["kModuleError"]);
   }
   const { initializeClient } = Kerberos;
 
   const { username, password } = credentials;
-  const mechanismProperties = credentials.mechanismProperties as MechanismProperties;
+  const mechanismProperties = credentials
+    .mechanismProperties as MechanismProperties;
 
-  const serviceName = mechanismProperties.SERVICE_NAME ?? 'mongodb';
+  const serviceName = mechanismProperties.SERVICE_NAME ?? "mongodb";
 
   performGSSAPICanonicalizeHostName(
     hostAddress.host,
@@ -120,26 +137,32 @@ function makeKerberosClient(authContext: AuthContext, callback: Callback<Kerbero
       }
 
       const spnHost = mechanismProperties.SERVICE_HOST ?? host;
-      let spn = `${serviceName}${process.platform === 'win32' ? '/' : '@'}${spnHost}`;
-      if ('SERVICE_REALM' in mechanismProperties) {
+      let spn = `${serviceName}${
+        process.platform === "win32" ? "/" : "@"
+      }${spnHost}`;
+      if ("SERVICE_REALM" in mechanismProperties) {
         spn = `${spn}@${mechanismProperties.SERVICE_REALM}`;
       }
 
-      initializeClient(spn, initOptions, (err: string, client: KerberosClient): void => {
-        // TODO(NODE-3483)
-        if (err) return callback(new MongoRuntimeError(err));
-        callback(undefined, client);
-      });
-    }
+      initializeClient(
+        spn,
+        initOptions,
+        (err: string, client: KerberosClient): void => {
+          // TODO(NODE-3483)
+          if (err) return callback(new MongoRuntimeError(err));
+          callback(undefined, client);
+        },
+      );
+    },
   );
 }
 
 function saslStart(payload?: string): Document {
   return {
     saslStart: 1,
-    mechanism: 'GSSAPI',
+    mechanism: "GSSAPI",
     payload,
-    autoAuthorize: 1
+    autoAuthorize: 1,
   };
 }
 
@@ -147,7 +170,7 @@ function saslContinue(payload?: string, conversationId?: number): Document {
   return {
     saslContinue: 1,
     conversationId,
-    payload
+    payload,
   };
 }
 
@@ -155,7 +178,7 @@ function negotiate(
   client: KerberosClient,
   retries: number,
   payload: string,
-  callback: Callback<string>
+  callback: Callback<string>,
 ): void {
   client.step(payload, (err, response) => {
     // Retries exhausted, raise error
@@ -165,7 +188,7 @@ function negotiate(
     if (err) return negotiate(client, retries - 1, payload, callback);
 
     // Return the payload
-    callback(undefined, response || '');
+    callback(undefined, response || "");
   });
 }
 
@@ -173,14 +196,14 @@ function finalize(
   client: KerberosClient,
   user: string,
   payload: string,
-  callback: Callback<string>
+  callback: Callback<string>,
 ): void {
   // GSS Client Unwrap
   client.unwrap(payload, (err, response) => {
     if (err) return callback(err);
 
     // Wrap the response
-    client.wrap(response || '', { user }, (err, wrapped) => {
+    client.wrap(response || "", { user }, (err, wrapped) => {
       if (err) return callback(err);
 
       // Return the payload
@@ -192,7 +215,7 @@ function finalize(
 export function performGSSAPICanonicalizeHostName(
   host: string,
   mechanismProperties: MechanismProperties,
-  callback: Callback<string>
+  callback: Callback<string>,
 ): void {
   const mode = mechanismProperties.CANONICALIZE_HOST_NAME;
   if (!mode || mode === GSSAPICanonicalizationValue.none) {

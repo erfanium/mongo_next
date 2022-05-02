@@ -1,13 +1,13 @@
-import { MongoInvalidArgumentError } from './error.ts';
+import { MongoInvalidArgumentError } from "./error.ts";
 
 /** @public */
 export type SortDirection =
   | 1
   | -1
-  | 'asc'
-  | 'desc'
-  | 'ascending'
-  | 'descending'
+  | "asc"
+  | "desc"
+  | "ascending"
+  | "descending"
   | { $meta: string };
 
 /** @public */
@@ -36,22 +36,25 @@ function prepareDirection(direction: any = 1): SortDirectionForCmd {
   const value = `${direction}`.toLowerCase();
   if (isMeta(direction)) return direction;
   switch (value) {
-    case 'ascending':
-    case 'asc':
-    case '1':
+    case "ascending":
+    case "asc":
+    case "1":
       return 1;
-    case 'descending':
-    case 'desc':
-    case '-1':
+    case "descending":
+    case "desc":
+    case "-1":
       return -1;
     default:
-      throw new MongoInvalidArgumentError(`Invalid sort direction: ${JSON.stringify(direction)}`);
+      throw new MongoInvalidArgumentError(
+        `Invalid sort direction: ${JSON.stringify(direction)}`,
+      );
   }
 }
 
 /** @internal */
 function isMeta(t: SortDirection): t is { $meta: string } {
-  return typeof t === 'object' && t != null && '$meta' in t && typeof t.$meta === 'string';
+  return typeof t === "object" && t != null && "$meta" in t &&
+    typeof t.$meta === "string";
 }
 
 /** @internal */
@@ -82,13 +85,15 @@ function pairToMap(v: [string, SortDirection]): SortForCmd {
 
 /** @internal */
 function deepToMap(t: [string, SortDirection][]): SortForCmd {
-  const sortEntries: SortPairForCmd[] = t.map(([k, v]) => [`${k}`, prepareDirection(v)]);
+  const sortEntries: SortPairForCmd[] = t.map((
+    [k, v],
+  ) => [`${k}`, prepareDirection(v)]);
   return new Map(sortEntries);
 }
 
 /** @internal */
 function stringsToMap(t: string[]): SortForCmd {
-  const sortEntries: SortPairForCmd[] = t.map(key => [`${key}`, 1]);
+  const sortEntries: SortPairForCmd[] = t.map((key) => [`${key}`, 1]);
   return new Map(sortEntries);
 }
 
@@ -96,7 +101,7 @@ function stringsToMap(t: string[]): SortForCmd {
 function objectToMap(t: { [key: string]: SortDirection }): SortForCmd {
   const sortEntries: SortPairForCmd[] = Object.entries(t).map(([k, v]) => [
     `${k}`,
-    prepareDirection(v)
+    prepareDirection(v),
   ]);
   return new Map(sortEntries);
 }
@@ -105,7 +110,7 @@ function objectToMap(t: { [key: string]: SortDirection }): SortForCmd {
 function mapToMap(t: Map<string, SortDirection>): SortForCmd {
   const sortEntries: SortPairForCmd[] = Array.from(t).map(([k, v]) => [
     `${k}`,
-    prepareDirection(v)
+    prepareDirection(v),
   ]);
   return new Map(sortEntries);
 }
@@ -113,17 +118,25 @@ function mapToMap(t: Map<string, SortDirection>): SortForCmd {
 /** converts a Sort type into a type that is valid for the server (SortForCmd) */
 export function formatSort(
   sort: Sort | undefined,
-  direction?: SortDirection
+  direction?: SortDirection,
 ): SortForCmd | undefined {
   if (sort == null) return undefined;
-  if (typeof sort === 'string') return new Map([[sort, prepareDirection(direction)]]);
-  if (typeof sort !== 'object') {
+  if (typeof sort === "string") {
+    return new Map([[sort, prepareDirection(direction)]]);
+  }
+  if (typeof sort !== "object") {
     throw new MongoInvalidArgumentError(
-      `Invalid sort format: ${JSON.stringify(sort)} Sort must be a valid object`
+      `Invalid sort format: ${
+        JSON.stringify(sort)
+      } Sort must be a valid object`,
     );
   }
   if (!Array.isArray(sort)) {
-    return isMap(sort) ? mapToMap(sort) : Object.keys(sort).length ? objectToMap(sort) : undefined;
+    return isMap(sort)
+      ? mapToMap(sort)
+      : Object.keys(sort).length
+      ? objectToMap(sort)
+      : undefined;
   }
   if (!sort.length) return undefined;
   if (isDeep(sort)) return deepToMap(sort);

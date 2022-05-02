@@ -1,9 +1,14 @@
-import type { Document, Long } from '../bson.ts';
-import { MongoRuntimeError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, maxWireVersion, MongoDBNamespace } from '../utils.ts';
-import { AbstractOperation, Aspect, defineAspects, OperationOptions } from './operation.ts';
+import type { Document, Long } from "../bson.ts";
+import { MongoRuntimeError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, maxWireVersion, MongoDBNamespace } from "../utils.ts";
+import {
+  AbstractOperation,
+  Aspect,
+  defineAspects,
+  OperationOptions,
+} from "./operation.ts";
 
 /**
  * @public
@@ -27,7 +32,12 @@ export class GetMoreOperation extends AbstractOperation {
   cursorId: Long;
   override options: GetMoreOptions;
 
-  constructor(ns: MongoDBNamespace, cursorId: Long, server: Server, options: GetMoreOptions = {}) {
+  constructor(
+    ns: MongoDBNamespace,
+    cursorId: Long,
+    server: Server,
+    options: GetMoreOptions = {},
+  ) {
     super(options);
 
     this.options = options;
@@ -49,15 +59,20 @@ export class GetMoreOperation extends AbstractOperation {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     if (server !== this.server) {
       return callback(
-        new MongoRuntimeError('Getmore must run on the same server operation began on')
+        new MongoRuntimeError(
+          "Getmore must run on the same server operation began on",
+        ),
       );
     }
     server.getMore(this.ns, this.cursorId, this.options, callback);
   }
 }
 
-defineAspects(GetMoreOperation, [Aspect.READ_OPERATION, Aspect.CURSOR_ITERATING]);
+defineAspects(GetMoreOperation, [
+  Aspect.READ_OPERATION,
+  Aspect.CURSOR_ITERATING,
+]);

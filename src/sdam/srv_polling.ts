@@ -1,9 +1,9 @@
-import * as dns from 'dns';
+import * as dns from "dns";
 
-import { MongoRuntimeError } from '../error.ts';
-import { Logger, LoggerOptions } from '../logger.ts';
-import { TypedEventEmitter } from '../mongo_types.ts';
-import { HostAddress } from '../utils.ts';
+import { MongoRuntimeError } from "../error.ts";
+import { Logger, LoggerOptions } from "../logger.ts";
+import { TypedEventEmitter } from "../mongo_types.ts";
+import { HostAddress } from "../utils.ts";
 
 /**
  * Determines whether a provided address matches the provided parent domain in order
@@ -13,10 +13,13 @@ import { HostAddress } from '../utils.ts';
  * @param parentDomain - The domain to check the provided address against
  * @returns Whether the provided address matches the parent domain
  */
-function matchesParentDomain(srvAddress: string, parentDomain: string): boolean {
+function matchesParentDomain(
+  srvAddress: string,
+  parentDomain: string,
+): boolean {
   const regex = /^.*?\./;
-  const srv = `.${srvAddress.replace(regex, '')}`;
-  const parent = `.${parentDomain.replace(regex, '')}`;
+  const srv = `.${srvAddress.replace(regex, "")}`;
+  const parent = `.${parentDomain.replace(regex, "")}`;
   return srv.endsWith(parent);
 }
 
@@ -31,7 +34,9 @@ export class SrvPollingEvent {
   }
 
   hostnames(): Set<string> {
-    return new Set(this.srvRecords.map(r => HostAddress.fromSrvRecord(r).toString()));
+    return new Set(
+      this.srvRecords.map((r) => HostAddress.fromSrvRecord(r).toString()),
+    );
   }
 }
 
@@ -58,24 +63,26 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
   generation: number;
   srvMaxHosts: number;
   srvServiceName: string;
-  _timeout?: NodeJS.Timeout;
+  _timeout?: number;
 
   /** @event */
-  static readonly SRV_RECORD_DISCOVERY = 'srvRecordDiscovery' as const;
+  static readonly SRV_RECORD_DISCOVERY = "srvRecordDiscovery" as const;
 
   constructor(options: SrvPollerOptions) {
     super();
 
     if (!options || !options.srvHost) {
-      throw new MongoRuntimeError('Options for SrvPoller must exist and include srvHost');
+      throw new MongoRuntimeError(
+        "Options for SrvPoller must exist and include srvHost",
+      );
     }
 
     this.srvHost = options.srvHost;
     this.srvMaxHosts = options.srvMaxHosts ?? 0;
-    this.srvServiceName = options.srvServiceName ?? 'mongodb';
+    this.srvServiceName = options.srvServiceName ?? "mongodb";
     this.rescanSrvIntervalMS = 60000;
     this.heartbeatFrequencyMS = options.heartbeatFrequencyMS ?? 10000;
-    this.logger = new Logger('srvPoller', options);
+    this.logger = new Logger("srvPoller", options);
 
     this.haMode = false;
     this.generation = 0;
@@ -128,7 +135,7 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
   parentDomainMismatch(srvRecord: dns.SrvRecord): void {
     this.logger.warn(
       `parent domain mismatch on SRV record (${srvRecord.name}:${srvRecord.port})`,
-      srvRecord
+      srvRecord,
     );
   }
 
@@ -140,7 +147,7 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
       }
 
       if (err) {
-        this.failure('DNS error', err);
+        this.failure("DNS error", err);
         return;
       }
 
@@ -154,7 +161,7 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
       }
 
       if (!finalAddresses.length) {
-        this.failure('No valid addresses found at host');
+        this.failure("No valid addresses found at host");
         return;
       }
 

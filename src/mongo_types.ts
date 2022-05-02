@@ -1,5 +1,5 @@
-import type { ObjectIdLike } from 'bson';
-import { EventEmitter } from 'events';
+import type { Bson } from "../deps.ts";
+import { EventEmitter } from "events";
 
 import type {
   Binary,
@@ -10,34 +10,34 @@ import type {
   Int32,
   Long,
   ObjectId,
-  Timestamp
-} from './bson.ts';
-import type { Sort } from './sort.ts';
+  Timestamp,
+} from "./bson.ts";
+import type { Sort } from "./sort.ts";
 
 /** @internal */
 export type TODO_NODE_3286 = any;
 
 /** Given an object shaped type, return the type of the _id field or default to ObjectId @public */
-export type InferIdType<TSchema> = TSchema extends { _id: infer IdType }
-  ? // user has defined a type for _id
-    Record<any, never> extends IdType
-    ? never // explicitly forbid empty objects as the type of _id
-    : IdType
-  : TSchema extends { _id?: infer IdType }
-  ? // optional _id defined - return ObjectId | IdType
-    unknown extends IdType
-    ? ObjectId // infer the _id type as ObjectId if the type of _id is unknown
-    : IdType
+export type InferIdType<TSchema> = TSchema extends { _id: infer IdType } ? // user has defined a type for _id
+Record<any, never> extends IdType ? never // explicitly forbid empty objects as the type of _id
+: IdType
+  : TSchema extends { _id?: infer IdType } ? // optional _id defined - return ObjectId | IdType
+  unknown extends IdType ? ObjectId // infer the _id type as ObjectId if the type of _id is unknown
+  : IdType
   : ObjectId; // user has not defined _id on schema
 
 /** Add an _id field to an object shaped type @public */
-export type WithId<TSchema> = EnhancedOmit<TSchema, '_id'> & { _id: InferIdType<TSchema> };
+export type WithId<TSchema> = EnhancedOmit<TSchema, "_id"> & {
+  _id: InferIdType<TSchema>;
+};
 
 /**
  * Add an optional _id field to an object shaped type
  * @public
  */
-export type OptionalId<TSchema> = EnhancedOmit<TSchema, '_id'> & { _id?: InferIdType<TSchema> };
+export type OptionalId<TSchema> = EnhancedOmit<TSchema, "_id"> & {
+  _id?: InferIdType<TSchema>;
+};
 
 /**
  * Adds an optional _id field to an object shaped type, unless the _id field is requried on that type.
@@ -55,26 +55,31 @@ export type OptionalUnlessRequiredId<TSchema> = TSchema extends { _id: any }
   : OptionalId<TSchema>;
 
 /** TypeScript Omit (Exclude to be specific) does not work for objects with an "any" indexed type, and breaks discriminated unions @public */
-export type EnhancedOmit<TRecordOrUnion, KeyUnion> = string extends keyof TRecordOrUnion
-  ? TRecordOrUnion // TRecordOrUnion has indexed type e.g. { _id: string; [k: string]: any; } or it is "any"
+export type EnhancedOmit<TRecordOrUnion, KeyUnion> = string extends
+  keyof TRecordOrUnion ? TRecordOrUnion // TRecordOrUnion has indexed type e.g. { _id: string; [k: string]: any; } or it is "any"
   : TRecordOrUnion extends any
-  ? Pick<TRecordOrUnion, Exclude<keyof TRecordOrUnion, KeyUnion>> // discriminated unions
+    ? Pick<TRecordOrUnion, Exclude<keyof TRecordOrUnion, KeyUnion>> // discriminated unions
   : never;
 
 /** Remove the _id field from an object shaped type @public */
-export type WithoutId<TSchema> = Omit<TSchema, '_id'>;
+export type WithoutId<TSchema> = Omit<TSchema, "_id">;
 
 /** A MongoDB filter can be some portion of the schema or a set of operators @public */
 export type Filter<TSchema> =
   | Partial<TSchema>
-  | ({
-      [Property in Join<NestedPaths<WithId<TSchema>>, '.'>]?: Condition<
+  | (
+    & {
+      [Property in Join<NestedPaths<WithId<TSchema>>, ".">]?: Condition<
         PropertyType<WithId<TSchema>, Property>
       >;
-    } & RootFilterOperators<WithId<TSchema>>);
+    }
+    & RootFilterOperators<WithId<TSchema>>
+  );
 
 /** @public */
-export type Condition<T> = AlternativeType<T> | FilterOperators<AlternativeType<T>>;
+export type Condition<T> =
+  | AlternativeType<T>
+  | FilterOperators<AlternativeType<T>>;
 
 /**
  * It is possible to search using alternative types in mongodb e.g.
@@ -108,9 +113,11 @@ export interface RootFilterOperators<TSchema> extends Document {
  * @public
  * A type that extends Document but forbids anything that "looks like" an object id.
  */
-export type NonObjectIdLikeDocument = {
-  [key in keyof ObjectIdLike]?: never;
-} & Document;
+export type NonObjectIdLikeDocument =
+  & {
+    [key in keyof Bson.ObjectIdLike]?: never;
+  }
+  & Document;
 
 /** @public */
 export interface FilterOperators<TValue> extends NonObjectIdLikeDocument {
@@ -124,7 +131,8 @@ export interface FilterOperators<TValue> extends NonObjectIdLikeDocument {
   $ne?: TValue;
   $nin?: ReadonlyArray<TValue>;
   // Logical
-  $not?: TValue extends string ? FilterOperators<TValue> | RegExp : FilterOperators<TValue>;
+  $not?: TValue extends string ? FilterOperators<TValue> | RegExp
+    : FilterOperators<TValue>;
   // Element
   /**
    * When `true`, `$exists` matches the documents that contain the field,
@@ -163,29 +171,31 @@ export type BitwiseFilter =
   | ReadonlyArray<number>; /** `[ <position1>, <position2>, ... ]` */
 
 /** @public */
-export const BSONType = Object.freeze({
-  double: 1,
-  string: 2,
-  object: 3,
-  array: 4,
-  binData: 5,
-  undefined: 6,
-  objectId: 7,
-  bool: 8,
-  date: 9,
-  null: 10,
-  regex: 11,
-  dbPointer: 12,
-  javascript: 13,
-  symbol: 14,
-  javascriptWithScope: 15,
-  int: 16,
-  timestamp: 17,
-  long: 18,
-  decimal: 19,
-  minKey: -1,
-  maxKey: 127
-} as const);
+export const BSONType = Object.freeze(
+  {
+    double: 1,
+    string: 2,
+    object: 3,
+    array: 4,
+    binData: 5,
+    undefined: 6,
+    objectId: 7,
+    bool: 8,
+    date: 9,
+    null: 10,
+    regex: 11,
+    dbPointer: 12,
+    javascript: 13,
+    symbol: 14,
+    javascriptWithScope: 15,
+    int: 16,
+    timestamp: 17,
+    long: 18,
+    decimal: 19,
+    minKey: -1,
+    maxKey: 127,
+  } as const,
+);
 
 /** @public */
 export type BSONType = typeof BSONType[keyof typeof BSONType];
@@ -212,7 +222,8 @@ export type IsAny<Type, ResultIfAny, ResultIfNotAny> = true extends false & Type
   : ResultIfNotAny;
 
 /** @public */
-export type Flatten<Type> = Type extends ReadonlyArray<infer Item> ? Item : Type;
+export type Flatten<Type> = Type extends ReadonlyArray<infer Item> ? Item
+  : Type;
 
 /** @public */
 export type SchemaMember<T, V> = { [P in keyof T]?: V } | { [key: string]: V };
@@ -249,16 +260,22 @@ export type NotAcceptedFields<TSchema, FieldType> = {
 };
 
 /** @public */
-export type OnlyFieldsOfType<TSchema, FieldType = any, AssignableType = FieldType> = IsAny<
+export type OnlyFieldsOfType<
+  TSchema,
+  FieldType = any,
+  AssignableType = FieldType,
+> = IsAny<
   TSchema[keyof TSchema],
   Record<string, FieldType>,
-  AcceptedFields<TSchema, FieldType, AssignableType> &
-    NotAcceptedFields<TSchema, FieldType> &
-    Record<string, AssignableType>
+  & AcceptedFields<TSchema, FieldType, AssignableType>
+  & NotAcceptedFields<TSchema, FieldType>
+  & Record<string, AssignableType>
 >;
 
 /** @public */
-export type MatchKeysAndValues<TSchema> = Readonly<Partial<TSchema>> & Record<string, any>;
+export type MatchKeysAndValues<TSchema> =
+  & Readonly<Partial<TSchema>>
+  & Record<string, any>;
 
 /** @public */
 export type AddToSetOperators<Type> = {
@@ -274,45 +291,65 @@ export type ArrayOperator<Type> = {
 };
 
 /** @public */
-export type SetFields<TSchema> = ({
-  readonly [key in KeysOfAType<TSchema, ReadonlyArray<any> | undefined>]?:
-    | OptionalId<Flatten<TSchema[key]>>
-    | AddToSetOperators<Array<OptionalId<Flatten<TSchema[key]>>>>;
-} & NotAcceptedFields<TSchema, ReadonlyArray<any> | undefined>) & {
-  readonly [key: string]: AddToSetOperators<any> | any;
-};
+export type SetFields<TSchema> =
+  & (
+    & {
+      readonly [key in KeysOfAType<TSchema, ReadonlyArray<any> | undefined>]?:
+        | OptionalId<Flatten<TSchema[key]>>
+        | AddToSetOperators<Array<OptionalId<Flatten<TSchema[key]>>>>;
+    }
+    & NotAcceptedFields<TSchema, ReadonlyArray<any> | undefined>
+  )
+  & {
+    readonly [key: string]: AddToSetOperators<any> | any;
+  };
 
 /** @public */
-export type PushOperator<TSchema> = ({
-  readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?:
-    | Flatten<TSchema[key]>
-    | ArrayOperator<Array<Flatten<TSchema[key]>>>;
-} & NotAcceptedFields<TSchema, ReadonlyArray<any>>) & {
-  readonly [key: string]: ArrayOperator<any> | any;
-};
+export type PushOperator<TSchema> =
+  & (
+    & {
+      readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?:
+        | Flatten<TSchema[key]>
+        | ArrayOperator<Array<Flatten<TSchema[key]>>>;
+    }
+    & NotAcceptedFields<TSchema, ReadonlyArray<any>>
+  )
+  & {
+    readonly [key: string]: ArrayOperator<any> | any;
+  };
 
 /** @public */
-export type PullOperator<TSchema> = ({
-  readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?:
-    | Partial<Flatten<TSchema[key]>>
-    | FilterOperations<Flatten<TSchema[key]>>;
-} & NotAcceptedFields<TSchema, ReadonlyArray<any>>) & {
-  readonly [key: string]: FilterOperators<any> | any;
-};
+export type PullOperator<TSchema> =
+  & (
+    & {
+      readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?:
+        | Partial<Flatten<TSchema[key]>>
+        | FilterOperations<Flatten<TSchema[key]>>;
+    }
+    & NotAcceptedFields<TSchema, ReadonlyArray<any>>
+  )
+  & {
+    readonly [key: string]: FilterOperators<any> | any;
+  };
 
 /** @public */
-export type PullAllOperator<TSchema> = ({
-  readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?: TSchema[key];
-} & NotAcceptedFields<TSchema, ReadonlyArray<any>>) & {
-  readonly [key: string]: ReadonlyArray<any>;
-};
+export type PullAllOperator<TSchema> =
+  & (
+    & {
+      readonly [key in KeysOfAType<TSchema, ReadonlyArray<any>>]?: TSchema[key];
+    }
+    & NotAcceptedFields<TSchema, ReadonlyArray<any>>
+  )
+  & {
+    readonly [key: string]: ReadonlyArray<any>;
+  };
 
 /** @public */
 export type UpdateFilter<TSchema> = {
   $currentDate?: OnlyFieldsOfType<
     TSchema,
     Date | Timestamp,
-    true | { $type: 'date' | 'timestamp' }
+    true | { $type: "date" | "timestamp" }
   >;
   $inc?: OnlyFieldsOfType<TSchema, NumericType | undefined>;
   $min?: MatchKeysAndValues<TSchema>;
@@ -321,7 +358,7 @@ export type UpdateFilter<TSchema> = {
   $rename?: Record<string, string>;
   $set?: MatchKeysAndValues<TSchema>;
   $setOnInsert?: MatchKeysAndValues<TSchema>;
-  $unset?: OnlyFieldsOfType<TSchema, any, '' | true | 1>;
+  $unset?: OnlyFieldsOfType<TSchema, any, "" | true | 1>;
   $addToSet?: SetFields<TSchema>;
   $pop?: OnlyFieldsOfType<TSchema, ReadonlyArray<any>, 1 | -1>;
   $pull?: PullOperator<TSchema>;
@@ -350,58 +387,74 @@ export type GenericListener = (...args: any[]) => void;
 export type EventsDescription = Record<string, GenericListener>;
 
 /** @public */
-export type CommonEvents = 'newListener' | 'removeListener';
+export type CommonEvents = "newListener" | "removeListener";
 
 /**
  * Typescript type safe event emitter
  * @public
  */
-export declare interface TypedEventEmitter<Events extends EventsDescription> extends EventEmitter {
-  addListener<EventKey extends keyof Events>(event: EventKey, listener: Events[EventKey]): this;
+export declare interface TypedEventEmitter<Events extends EventsDescription>
+  extends EventEmitter {
+  addListener<EventKey extends keyof Events>(
+    event: EventKey,
+    listener: Events[EventKey],
+  ): this;
   addListener(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   addListener(event: string | symbol, listener: GenericListener): this;
 
-  on<EventKey extends keyof Events>(event: EventKey, listener: Events[EventKey]): this;
+  on<EventKey extends keyof Events>(
+    event: EventKey,
+    listener: Events[EventKey],
+  ): this;
   on(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   on(event: string | symbol, listener: GenericListener): this;
 
-  once<EventKey extends keyof Events>(event: EventKey, listener: Events[EventKey]): this;
+  once<EventKey extends keyof Events>(
+    event: EventKey,
+    listener: Events[EventKey],
+  ): this;
   once(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   once(event: string | symbol, listener: GenericListener): this;
 
-  removeListener<EventKey extends keyof Events>(event: EventKey, listener: Events[EventKey]): this;
+  removeListener<EventKey extends keyof Events>(
+    event: EventKey,
+    listener: Events[EventKey],
+  ): this;
   removeListener(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   removeListener(event: string | symbol, listener: GenericListener): this;
 
-  off<EventKey extends keyof Events>(event: EventKey, listener: Events[EventKey]): this;
+  off<EventKey extends keyof Events>(
+    event: EventKey,
+    listener: Events[EventKey],
+  ): this;
   off(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   off(event: string | symbol, listener: GenericListener): this;
 
   removeAllListeners<EventKey extends keyof Events>(
-    event?: EventKey | CommonEvents | symbol | string
+    event?: EventKey | CommonEvents | symbol | string,
   ): this;
 
   listeners<EventKey extends keyof Events>(
-    event: EventKey | CommonEvents | symbol | string
+    event: EventKey | CommonEvents | symbol | string,
   ): Events[EventKey][];
 
   rawListeners<EventKey extends keyof Events>(
-    event: EventKey | CommonEvents | symbol | string
+    event: EventKey | CommonEvents | symbol | string,
   ): Events[EventKey][];
 
   emit<EventKey extends keyof Events>(
@@ -410,23 +463,26 @@ export declare interface TypedEventEmitter<Events extends EventsDescription> ext
   ): boolean;
 
   listenerCount<EventKey extends keyof Events>(
-    type: EventKey | CommonEvents | symbol | string
+    type: EventKey | CommonEvents | symbol | string,
   ): number;
 
-  prependListener<EventKey extends keyof Events>(event: EventKey, listener: Events[EventKey]): this;
+  prependListener<EventKey extends keyof Events>(
+    event: EventKey,
+    listener: Events[EventKey],
+  ): this;
   prependListener(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   prependListener(event: string | symbol, listener: GenericListener): this;
 
   prependOnceListener<EventKey extends keyof Events>(
     event: EventKey,
-    listener: Events[EventKey]
+    listener: Events[EventKey],
   ): this;
   prependOnceListener(
     event: CommonEvents,
-    listener: (eventName: string | symbol, listener: GenericListener) => void
+    listener: (eventName: string | symbol, listener: GenericListener) => void,
   ): this;
   prependOnceListener(event: string | symbol, listener: GenericListener): this;
 
@@ -440,7 +496,8 @@ export declare interface TypedEventEmitter<Events extends EventsDescription> ext
  * @public
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export class TypedEventEmitter<Events extends EventsDescription> extends EventEmitter {}
+export class TypedEventEmitter<Events extends EventsDescription>
+  extends EventEmitter {}
 
 /** @public */
 export class CancellationToken extends TypedEventEmitter<{ cancel(): void }> {}
@@ -450,31 +507,25 @@ export class CancellationToken extends TypedEventEmitter<{ cancel(): void }> {}
  */
 
 /** @public */
-export type Join<T extends unknown[], D extends string> = T extends []
-  ? ''
-  : T extends [string | number]
-  ? `${T[0]}`
-  : T extends [string | number, ...infer R]
-  ? `${T[0]}${D}${Join<R, D>}`
+export type Join<T extends unknown[], D extends string> = T extends [] ? ""
+  : T extends [string | number] ? `${T[0]}`
+  : T extends [string | number, ...infer R] ? `${T[0]}${D}${Join<R, D>}`
   : string;
 
 /** @public */
-export type PropertyType<Type, Property extends string> = string extends Property
-  ? unknown
-  : Property extends keyof Type
-  ? Type[Property]
+export type PropertyType<Type, Property extends string> = string extends
+  Property ? unknown
+  : Property extends keyof Type ? Type[Property]
   : Property extends `${number}`
-  ? Type extends ReadonlyArray<infer ArrayType>
-    ? ArrayType
+    ? Type extends ReadonlyArray<infer ArrayType> ? ArrayType
     : unknown
   : Property extends `${infer Key}.${infer Rest}`
-  ? Key extends `${number}`
-    ? Type extends ReadonlyArray<infer ArrayType>
-      ? PropertyType<ArrayType, Rest>
+    ? Key extends `${number}`
+      ? Type extends ReadonlyArray<infer ArrayType>
+        ? PropertyType<ArrayType, Rest>
       : unknown
     : Key extends keyof Type
-    ? Type[Key] extends Map<string, infer MapType>
-      ? MapType
+      ? Type[Key] extends Map<string, infer MapType> ? MapType
       : PropertyType<Type[Key], Rest>
     : unknown
   : unknown;
@@ -493,30 +544,25 @@ export type NestedPaths<Type> = Type extends
   | Buffer
   | Uint8Array
   | ((...args: any[]) => any)
-  | { _bsontype: string }
-  ? []
+  | { _bsontype: string } ? []
   : Type extends ReadonlyArray<infer ArrayType>
-  ? [] | [number, ...NestedPaths<ArrayType>]
-  : Type extends Map<string, any>
-  ? [string]
+    ? [] | [number, ...NestedPaths<ArrayType>]
+  : Type extends Map<string, any> ? [string]
   : // eslint-disable-next-line @typescript-eslint/ban-types
-  Type extends object
-  ? {
-      [Key in Extract<keyof Type, string>]: Type[Key] extends Type // type of value extends the parent
-        ? [Key]
-        : // for a recursive union type, the child will never extend the parent type.
-        // but the parent will still extend the child
-        Type extends Type[Key]
-        ? [Key]
-        : Type[Key] extends ReadonlyArray<infer ArrayType> // handling recursive types with arrays
+  Type extends object ? {
+    [Key in Extract<keyof Type, string>]: Type[Key] extends Type // type of value extends the parent
+      ? [Key]
+      : // for a recursive union type, the child will never extend the parent type.
+      // but the parent will still extend the child
+      Type extends Type[Key] ? [Key]
+      : Type[Key] extends ReadonlyArray<infer ArrayType> // handling recursive types with arrays
         ? Type extends ArrayType // is the type of the parent the same as the type of the array?
           ? [Key] // yes, it's a recursive array type
-          : // for unions, the child type extends the parent
-          ArrayType extends Type
-          ? [Key] // we have a recursive array union
-          : // child is an array, but it's not a recursive array
-            [Key, ...NestedPaths<Type[Key]>]
-        : // child is not structured the same as the parent
-          [Key, ...NestedPaths<Type[Key]>];
-    }[Extract<keyof Type, string>]
+        : // for unions, the child type extends the parent
+        ArrayType extends Type ? [Key] // we have a recursive array union
+        : // child is an array, but it's not a recursive array
+        [Key, ...NestedPaths<Type[Key]>]
+      : // child is not structured the same as the parent
+      [Key, ...NestedPaths<Type[Key]>];
+  }[Extract<keyof Type, string>]
   : [];

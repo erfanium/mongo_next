@@ -1,14 +1,14 @@
-import { MongoInvalidArgumentError } from './error.ts';
+import { MongoInvalidArgumentError } from "./error.ts";
 
 /** @internal */
-const kPromise = Symbol('promise');
+const kPromise = Symbol("promise");
 
 interface PromiseStore {
   [kPromise]?: PromiseConstructor;
 }
 
 const store: PromiseStore = {
-  [kPromise]: undefined
+  [kPromise]: undefined,
 };
 
 /**
@@ -18,8 +18,11 @@ const store: PromiseStore = {
 export class PromiseProvider {
   /** Validates the passed in promise library */
   static validate(lib: unknown): lib is PromiseConstructor {
-    if (typeof lib !== 'function')
-      throw new MongoInvalidArgumentError(`Promise must be a function, got ${lib}`);
+    if (typeof lib !== "function") {
+      throw new MongoInvalidArgumentError(
+        `Promise must be a function, got ${lib}`,
+      );
+    }
     return !!lib;
   }
 

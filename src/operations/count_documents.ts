@@ -1,9 +1,9 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback } from '../utils.ts';
-import { AggregateOperation, AggregateOptions } from './aggregate.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback } from "../utils.ts";
+import { AggregateOperation, AggregateOptions } from "./aggregate.ts";
 
 /** @public */
 export interface CountDocumentsOptions extends AggregateOptions {
@@ -15,15 +15,19 @@ export interface CountDocumentsOptions extends AggregateOptions {
 
 /** @internal */
 export class CountDocumentsOperation extends AggregateOperation<number> {
-  constructor(collection: Collection, query: Document, options: CountDocumentsOptions) {
+  constructor(
+    collection: Collection,
+    query: Document,
+    options: CountDocumentsOptions,
+  ) {
     const pipeline = [];
     pipeline.push({ $match: query });
 
-    if (typeof options.skip === 'number') {
+    if (typeof options.skip === "number") {
       pipeline.push({ $skip: options.skip });
     }
 
-    if (typeof options.limit === 'number') {
+    if (typeof options.limit === "number") {
       pipeline.push({ $limit: options.limit });
     }
 
@@ -35,7 +39,7 @@ export class CountDocumentsOperation extends AggregateOperation<number> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<number>
+    callback: Callback<number>,
   ): void {
     super.execute(server, session, (err, result) => {
       if (err || !result) {

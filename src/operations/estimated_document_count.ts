@@ -1,11 +1,11 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import type { MongoServerError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, maxWireVersion } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import type { MongoServerError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, maxWireVersion } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export interface EstimatedDocumentCountOptions extends CommandOperationOptions {
@@ -22,7 +22,10 @@ export class EstimatedDocumentCountOperation extends CommandOperation<number> {
   override options: EstimatedDocumentCountOptions;
   collectionName: string;
 
-  constructor(collection: Collection, options: EstimatedDocumentCountOptions = {}) {
+  constructor(
+    collection: Collection,
+    options: EstimatedDocumentCountOptions = {},
+  ) {
     super(collection, options);
     this.options = options;
     this.collectionName = collection.collectionName;
@@ -31,16 +34,22 @@ export class EstimatedDocumentCountOperation extends CommandOperation<number> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<number>
+    callback: Callback<number>,
   ): void {
     if (maxWireVersion(server) < 12) {
       return this.executeLegacy(server, session, callback);
     }
-    const pipeline = [{ $collStats: { count: {} } }, { $group: { _id: 1, n: { $sum: '$count' } } }];
+    const pipeline = [{ $collStats: { count: {} } }, {
+      $group: { _id: 1, n: { $sum: "$count" } },
+    }];
 
-    const cmd: Document = { aggregate: this.collectionName, pipeline, cursor: {} };
+    const cmd: Document = {
+      aggregate: this.collectionName,
+      pipeline,
+      cursor: {},
+    };
 
-    if (typeof this.options.maxTimeMS === 'number') {
+    if (typeof this.options.maxTimeMS === "number") {
       cmd.maxTimeMS = this.options.maxTimeMS;
     }
 
@@ -57,11 +66,11 @@ export class EstimatedDocumentCountOperation extends CommandOperation<number> {
   executeLegacy(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<number>
+    callback: Callback<number>,
   ): void {
     const cmd: Document = { count: this.collectionName };
 
-    if (typeof this.options.maxTimeMS === 'number') {
+    if (typeof this.options.maxTimeMS === "number") {
       cmd.maxTimeMS = this.options.maxTimeMS;
     }
 
@@ -79,5 +88,5 @@ export class EstimatedDocumentCountOperation extends CommandOperation<number> {
 defineAspects(EstimatedDocumentCountOperation, [
   Aspect.READ_OPERATION,
   Aspect.RETRYABLE,
-  Aspect.CURSOR_CREATING
+  Aspect.CURSOR_CREATING,
 ]);

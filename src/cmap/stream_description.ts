@@ -1,15 +1,15 @@
-import type { Document } from '../bson.ts';
-import { ServerType } from '../sdam/common.ts';
-import { parseServerType } from '../sdam/server_description.ts';
-import type { CompressorName } from './wire_protocol/compression.ts';
+import type { Document } from "../bson.ts";
+import { ServerType } from "../sdam/common.ts";
+import { parseServerType } from "../sdam/server_description.ts";
+import type { CompressorName } from "./wire_protocol/compression.ts";
 
 const RESPONSE_FIELDS = [
-  'minWireVersion',
-  'maxWireVersion',
-  'maxBsonObjectSize',
-  'maxMessageSizeBytes',
-  'maxWriteBatchSize',
-  'logicalSessionTimeoutMinutes'
+  "minWireVersion",
+  "maxWireVersion",
+  "maxBsonObjectSize",
+  "maxMessageSizeBytes",
+  "maxWriteBatchSize",
+  "logicalSessionTimeoutMinutes",
 ] as const;
 
 /** @public */
@@ -64,13 +64,15 @@ export class StreamDescription {
       }
 
       // testing case
-      if ('__nodejs_mock_server__' in response) {
-        this.__nodejs_mock_server__ = response['__nodejs_mock_server__'];
+      if ("__nodejs_mock_server__" in response) {
+        this.__nodejs_mock_server__ = response["__nodejs_mock_server__"];
       }
     }
 
     if (response.compression) {
-      this.compressor = this.compressors.filter(c => response.compression?.includes(c))[0];
+      this.compressor = this.compressors.filter((c) =>
+        response.compression?.includes(c)
+      )[0];
     }
   }
 }

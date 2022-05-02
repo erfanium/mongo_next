@@ -1,8 +1,8 @@
 /** @internal */
 export class ConnectionPoolMetrics {
-  static readonly TXN = 'txn' as const;
-  static readonly CURSOR = 'cursor' as const;
-  static readonly OTHER = 'other' as const;
+  static readonly TXN = "txn" as const;
+  static readonly CURSOR = "cursor" as const;
+  static readonly OTHER = "other" as const;
 
   txnConnections = 0;
   cursorConnections = 0;
@@ -39,7 +39,7 @@ export class ConnectionPoolMetrics {
    */
   info(maxPoolSize: number): string {
     return (
-      'Timed out while checking out a connection from connection pool: ' +
+      "Timed out while checking out a connection from connection pool: " +
       `maxPoolSize: ${maxPoolSize}, ` +
       `connections in use by cursors: ${this.cursorConnections}, ` +
       `connections in use by transactions: ${this.txnConnections}, ` +

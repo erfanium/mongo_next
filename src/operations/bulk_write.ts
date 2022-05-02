@@ -2,13 +2,13 @@ import type {
   AnyBulkWriteOperation,
   BulkOperationBase,
   BulkWriteOptions,
-  BulkWriteResult
-} from '../bulk/common.ts';
-import type { Collection } from '../collection.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback } from '../utils.ts';
-import { AbstractOperation, Aspect, defineAspects } from './operation.ts';
+  BulkWriteResult,
+} from "../bulk/common.ts";
+import type { Collection } from "../collection.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback } from "../utils.ts";
+import { AbstractOperation, Aspect, defineAspects } from "./operation.ts";
 
 /** @internal */
 export class BulkWriteOperation extends AbstractOperation<BulkWriteResult> {
@@ -19,7 +19,7 @@ export class BulkWriteOperation extends AbstractOperation<BulkWriteResult> {
   constructor(
     collection: Collection,
     operations: AnyBulkWriteOperation[],
-    options: BulkWriteOptions
+    options: BulkWriteOptions,
   ) {
     super(options);
     this.options = options;
@@ -30,17 +30,20 @@ export class BulkWriteOperation extends AbstractOperation<BulkWriteResult> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<BulkWriteResult>
+    callback: Callback<BulkWriteResult>,
   ): void {
     const coll = this.collection;
     const operations = this.operations;
-    const options = { ...this.options, ...this.bsonOptions, readPreference: this.readPreference };
+    const options = {
+      ...this.options,
+      ...this.bsonOptions,
+      readPreference: this.readPreference,
+    };
 
     // Create the bulk operation
-    const bulk: BulkOperationBase =
-      options.ordered === false
-        ? coll.initializeUnorderedBulkOp(options)
-        : coll.initializeOrderedBulkOp(options);
+    const bulk: BulkOperationBase = options.ordered === false
+      ? coll.initializeUnorderedBulkOp(options)
+      : coll.initializeOrderedBulkOp(options);
 
     // for each op go through and add to the bulk
     try {

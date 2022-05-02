@@ -1,11 +1,17 @@
-import type { Document } from '../bson.ts';
-import * as BSON from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoInvalidArgumentError } from '../error.ts';
-import type { DeleteStatement } from '../operations/delete.ts';
-import type { UpdateStatement } from '../operations/update.ts';
-import type { Callback } from '../utils.ts';
-import { Batch, BatchType, BulkOperationBase, BulkWriteOptions, BulkWriteResult } from './common.ts';
+import type { Document } from "../bson.ts";
+import * as BSON from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import { MongoInvalidArgumentError } from "../error.ts";
+import type { DeleteStatement } from "../operations/delete.ts";
+import type { UpdateStatement } from "../operations/update.ts";
+import type { Callback } from "../utils.ts";
+import {
+  Batch,
+  BatchType,
+  BulkOperationBase,
+  BulkWriteOptions,
+  BulkWriteResult,
+} from "./common.ts";
 
 /** @public */
 export class UnorderedBulkOperation extends BulkOperationBase {
@@ -13,7 +19,10 @@ export class UnorderedBulkOperation extends BulkOperationBase {
     super(collection, options, false);
   }
 
-  override handleWriteError(callback: Callback, writeResult: BulkWriteResult): boolean {
+  override handleWriteError(
+    callback: Callback,
+    writeResult: BulkWriteResult,
+  ): boolean {
     if (this.s.batches.length) {
       return false;
     }
@@ -23,7 +32,7 @@ export class UnorderedBulkOperation extends BulkOperationBase {
 
   addToOperationsList(
     batchType: BatchType,
-    document: Document | UpdateStatement | DeleteStatement
+    document: Document | UpdateStatement | DeleteStatement,
   ): this {
     // Get the bsonSize
     const bsonSize = BSON.calculateObjectSize(document, {
@@ -31,14 +40,14 @@ export class UnorderedBulkOperation extends BulkOperationBase {
 
       // Since we don't know what the user selected for BSON options here,
       // err on the safe side, and check the size with ignoreUndefined: false.
-      ignoreUndefined: false
+      ignoreUndefined: false,
     } as any);
 
     // Throw error if the doc is bigger than the max BSON size
     if (bsonSize >= this.s.maxBsonObjectSize) {
       // TODO(NODE-3483): Change this to MongoBSONError
       throw new MongoInvalidArgumentError(
-        `Document is larger than the maximum size ${this.s.maxBsonObjectSize}`
+        `Document is larger than the maximum size ${this.s.maxBsonObjectSize}`,
       );
     }
 
@@ -67,7 +76,8 @@ export class UnorderedBulkOperation extends BulkOperationBase {
       // New batch if we exceed the maxBatchSizeBytes. Only matters if batch already has a doc,
       // since we can't sent an empty batch
       (this.s.currentBatch.size > 0 &&
-        this.s.currentBatch.sizeBytes + maxKeySize + bsonSize >= this.s.maxBatchSizeBytes) ||
+        this.s.currentBatch.sizeBytes + maxKeySize + bsonSize >=
+          this.s.maxBatchSizeBytes) ||
       // New batch if the new op does not have the same op type as the current batch
       this.s.currentBatch.batchType !== batchType
     ) {
@@ -80,7 +90,9 @@ export class UnorderedBulkOperation extends BulkOperationBase {
 
     // We have an array of documents
     if (Array.isArray(document)) {
-      throw new MongoInvalidArgumentError('Operation passed in cannot be an Array');
+      throw new MongoInvalidArgumentError(
+        "Operation passed in cannot be an Array",
+      );
     }
 
     this.s.currentBatch.operations.push(document);
@@ -92,7 +104,7 @@ export class UnorderedBulkOperation extends BulkOperationBase {
       this.s.currentInsertBatch = this.s.currentBatch;
       this.s.bulkResult.insertedIds.push({
         index: this.s.bulkResult.insertedIds.length,
-        _id: (document as Document)._id
+        _id: (document as Document)._id,
       });
     } else if (batchType === BatchType.UPDATE) {
       this.s.currentUpdateBatch = this.s.currentBatch;

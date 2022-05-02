@@ -1,59 +1,67 @@
-import type { Document } from './bson.ts';
-import { MongoRuntimeError, MongoTransactionError } from './error.ts';
-import type { CommandOperationOptions } from './operations/command.ts';
-import { ReadConcern, ReadConcernLike } from './read_concern.ts';
-import { ReadPreference } from './read_preference.ts';
-import type { Server } from './sdam/server.ts';
-import { WriteConcern } from './write_concern.ts';
+import type { Document } from "./bson.ts";
+import { MongoRuntimeError, MongoTransactionError } from "./error.ts";
+import type { CommandOperationOptions } from "./operations/command.ts";
+import { ReadConcern, ReadConcernLike } from "./read_concern.ts";
+import { ReadPreference } from "./read_preference.ts";
+import type { Server } from "./sdam/server.ts";
+import { WriteConcern } from "./write_concern.ts";
 
 /** @internal */
-export const TxnState = Object.freeze({
-  NO_TRANSACTION: 'NO_TRANSACTION',
-  STARTING_TRANSACTION: 'STARTING_TRANSACTION',
-  TRANSACTION_IN_PROGRESS: 'TRANSACTION_IN_PROGRESS',
-  TRANSACTION_COMMITTED: 'TRANSACTION_COMMITTED',
-  TRANSACTION_COMMITTED_EMPTY: 'TRANSACTION_COMMITTED_EMPTY',
-  TRANSACTION_ABORTED: 'TRANSACTION_ABORTED'
-} as const);
+export const TxnState = Object.freeze(
+  {
+    NO_TRANSACTION: "NO_TRANSACTION",
+    STARTING_TRANSACTION: "STARTING_TRANSACTION",
+    TRANSACTION_IN_PROGRESS: "TRANSACTION_IN_PROGRESS",
+    TRANSACTION_COMMITTED: "TRANSACTION_COMMITTED",
+    TRANSACTION_COMMITTED_EMPTY: "TRANSACTION_COMMITTED_EMPTY",
+    TRANSACTION_ABORTED: "TRANSACTION_ABORTED",
+  } as const,
+);
 
 /** @internal */
 export type TxnState = typeof TxnState[keyof typeof TxnState];
 
 const stateMachine: { [state in TxnState]: TxnState[] } = {
-  [TxnState.NO_TRANSACTION]: [TxnState.NO_TRANSACTION, TxnState.STARTING_TRANSACTION],
+  [TxnState.NO_TRANSACTION]: [
+    TxnState.NO_TRANSACTION,
+    TxnState.STARTING_TRANSACTION,
+  ],
   [TxnState.STARTING_TRANSACTION]: [
     TxnState.TRANSACTION_IN_PROGRESS,
     TxnState.TRANSACTION_COMMITTED,
     TxnState.TRANSACTION_COMMITTED_EMPTY,
-    TxnState.TRANSACTION_ABORTED
+    TxnState.TRANSACTION_ABORTED,
   ],
   [TxnState.TRANSACTION_IN_PROGRESS]: [
     TxnState.TRANSACTION_IN_PROGRESS,
     TxnState.TRANSACTION_COMMITTED,
-    TxnState.TRANSACTION_ABORTED
+    TxnState.TRANSACTION_ABORTED,
   ],
   [TxnState.TRANSACTION_COMMITTED]: [
     TxnState.TRANSACTION_COMMITTED,
     TxnState.TRANSACTION_COMMITTED_EMPTY,
     TxnState.STARTING_TRANSACTION,
-    TxnState.NO_TRANSACTION
+    TxnState.NO_TRANSACTION,
   ],
-  [TxnState.TRANSACTION_ABORTED]: [TxnState.STARTING_TRANSACTION, TxnState.NO_TRANSACTION],
+  [TxnState.TRANSACTION_ABORTED]: [
+    TxnState.STARTING_TRANSACTION,
+    TxnState.NO_TRANSACTION,
+  ],
   [TxnState.TRANSACTION_COMMITTED_EMPTY]: [
     TxnState.TRANSACTION_COMMITTED_EMPTY,
-    TxnState.NO_TRANSACTION
-  ]
+    TxnState.NO_TRANSACTION,
+  ],
 };
 
 const ACTIVE_STATES: Set<TxnState> = new Set([
   TxnState.STARTING_TRANSACTION,
-  TxnState.TRANSACTION_IN_PROGRESS
+  TxnState.TRANSACTION_IN_PROGRESS,
 ]);
 
 const COMMITTED_STATES: Set<TxnState> = new Set([
   TxnState.TRANSACTION_COMMITTED,
   TxnState.TRANSACTION_COMMITTED_EMPTY,
-  TxnState.TRANSACTION_ABORTED
+  TxnState.TRANSACTION_ABORTED,
 ]);
 
 /**
@@ -94,7 +102,9 @@ export class Transaction {
     const writeConcern = WriteConcern.fromOptions(options);
     if (writeConcern) {
       if (writeConcern.w === 0) {
-        throw new MongoTransactionError('Transactions do not support unacknowledged write concern');
+        throw new MongoTransactionError(
+          "Transactions do not support unacknowledged write concern",
+        );
       }
 
       this.options.writeConcern = writeConcern;
@@ -165,7 +175,7 @@ export class Transaction {
     }
 
     throw new MongoRuntimeError(
-      `Attempted illegal state transition from [${this.state}] to [${nextState}]`
+      `Attempted illegal state transition from [${this.state}] to [${nextState}]`,
     );
   }
 

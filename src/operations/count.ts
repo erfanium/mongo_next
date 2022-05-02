@@ -1,10 +1,10 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback, MongoDBNamespace } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback, MongoDBNamespace } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export interface CountOptions extends CommandOperationOptions {
@@ -24,7 +24,11 @@ export class CountOperation extends CommandOperation<number> {
   collectionName?: string;
   query: Document;
 
-  constructor(namespace: MongoDBNamespace, filter: Document, options: CountOptions) {
+  constructor(
+    namespace: MongoDBNamespace,
+    filter: Document,
+    options: CountOptions,
+  ) {
     super({ s: { namespace: namespace } } as unknown as Collection, options);
 
     this.options = options;
@@ -35,19 +39,19 @@ export class CountOperation extends CommandOperation<number> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<number>
+    callback: Callback<number>,
   ): void {
     const options = this.options;
     const cmd: Document = {
       count: this.collectionName,
-      query: this.query
+      query: this.query,
     };
 
-    if (typeof options.limit === 'number') {
+    if (typeof options.limit === "number") {
       cmd.limit = options.limit;
     }
 
-    if (typeof options.skip === 'number') {
+    if (typeof options.skip === "number") {
       cmd.skip = options.skip;
     }
 
@@ -55,7 +59,7 @@ export class CountOperation extends CommandOperation<number> {
       cmd.hint = options.hint;
     }
 
-    if (typeof options.maxTimeMS === 'number') {
+    if (typeof options.maxTimeMS === "number") {
       cmd.maxTimeMS = options.maxTimeMS;
     }
 

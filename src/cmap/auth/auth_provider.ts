@@ -1,9 +1,9 @@
-import type { Document } from '../../bson.ts';
-import { MongoRuntimeError } from '../../error.ts';
-import type { Callback, ClientMetadataOptions } from '../../utils.ts';
-import type { HandshakeDocument } from '../connect.ts';
-import type { Connection, ConnectionOptions } from '../connection.ts';
-import type { MongoCredentials } from './mongo_credentials.ts';
+import type { Document } from "../../bson.ts";
+import { MongoRuntimeError } from "../../error.ts";
+import type { Callback, ClientMetadataOptions } from "../../utils.ts";
+import type { HandshakeDocument } from "../connect.ts";
+import type { Connection, ConnectionOptions } from "../connection.ts";
+import type { MongoCredentials } from "./mongo_credentials.ts";
 
 export type AuthContextOptions = ConnectionOptions & ClientMetadataOptions;
 
@@ -24,7 +24,7 @@ export class AuthContext {
   constructor(
     connection: Connection,
     credentials: MongoCredentials | undefined,
-    options: AuthContextOptions
+    options: AuthContextOptions,
   ) {
     this.connection = connection;
     this.credentials = credentials;
@@ -42,7 +42,7 @@ export class AuthProvider {
   prepare(
     handshakeDoc: HandshakeDocument,
     authContext: AuthContext,
-    callback: Callback<HandshakeDocument>
+    callback: Callback<HandshakeDocument>,
   ): void {
     callback(undefined, handshakeDoc);
   }
@@ -55,6 +55,8 @@ export class AuthProvider {
    */
   auth(context: AuthContext, callback: Callback): void {
     // TODO(NODE-3483): Replace this with MongoMethodOverrideError
-    callback(new MongoRuntimeError('`auth` method must be overridden by subclass'));
+    callback(
+      new MongoRuntimeError("`auth` method must be overridden by subclass"),
+    );
   }
 }

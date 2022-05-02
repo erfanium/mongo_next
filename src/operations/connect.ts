@@ -1,17 +1,17 @@
-import { resolveSRVRecord } from  '../connection_string.ts';
-import { MONGO_CLIENT_EVENTS } from '../constants.ts';
-import { MongoInvalidArgumentError, MongoRuntimeError } from '../error.ts';
-import type { MongoClient, MongoOptions } from '../mongo_client.ts';
-import { Topology } from '../sdam/topology.ts';
-import type { Callback } from '../utils.ts';
+import { resolveSRVRecord } from "../connection_string.ts";
+import { MONGO_CLIENT_EVENTS } from "../constants.ts";
+import { MongoInvalidArgumentError, MongoRuntimeError } from "../error.ts";
+import type { MongoClient, MongoOptions } from "../mongo_client.ts";
+import { Topology } from "../sdam/topology.ts";
+import type { Callback } from "../utils.ts";
 
 export function connect(
   mongoClient: MongoClient,
   options: MongoOptions,
-  callback: Callback<MongoClient>
+  callback: Callback<MongoClient>,
 ): void {
   if (!callback) {
-    throw new MongoInvalidArgumentError('Callback function must be provided');
+    throw new MongoInvalidArgumentError("Callback function must be provided");
   }
 
   // If a connection already been established, we can terminate early
@@ -20,12 +20,12 @@ export function connect(
   }
 
   const logger = mongoClient.logger;
-  const connectCallback: Callback = err => {
+  const connectCallback: Callback = (err) => {
     const warningMessage =
-      'seed list contains no mongos proxies, replicaset connections requires ' +
-      'the parameter replicaSet to be supplied in the URI or options object, ' +
-      'mongodb://server:port/db?replicaSet=name';
-    if (err && err.message === 'no mongos proxies found in seed list') {
+      "seed list contains no mongos proxies, replicaset connections requires " +
+      "the parameter replicaSet to be supplied in the URI or options object, " +
+      "mongodb://server:port/db?replicaSet=name";
+    if (err && err.message === "no mongos proxies found in seed list") {
       if (logger.isWarn()) {
         logger.warn(warningMessage);
       }
@@ -38,7 +38,7 @@ export function connect(
     callback(err, mongoClient);
   };
 
-  if (typeof options.srvHost === 'string') {
+  if (typeof options.srvHost === "string") {
     return resolveSRVRecord(options, (err, hosts) => {
       if (err || !hosts) return callback(err);
       for (const [index, host] of hosts.entries()) {
@@ -55,7 +55,7 @@ export function connect(
 function createTopology(
   mongoClient: MongoClient,
   options: MongoOptions,
-  callback: Callback<Topology>
+  callback: Callback<Topology>,
 ) {
   // Create the topology
   const topology = new Topology(options.hosts, options);
@@ -63,26 +63,29 @@ function createTopology(
   // save the reference to the topology on the client ASAP if the event handlers need to access it
   mongoClient.topology = topology;
 
-  topology.once(Topology.OPEN, () => mongoClient.emit('open', mongoClient));
+  topology.once(Topology.OPEN, () => mongoClient.emit("open", mongoClient));
 
   for (const event of MONGO_CLIENT_EVENTS) {
-    topology.on(event, (...args: any[]) => mongoClient.emit(event, ...(args as any)));
+    topology.on(
+      event,
+      (...args: any[]) => mongoClient.emit(event, ...(args as any)),
+    );
   }
 
   // initialize CSFLE if requested
   if (mongoClient.autoEncrypter) {
-    mongoClient.autoEncrypter.init(err => {
+    mongoClient.autoEncrypter.init((err) => {
       if (err) {
         return callback(err);
       }
 
-      topology.connect(options, err => {
+      topology.connect(options, (err) => {
         if (err) {
           topology.close({ force: true });
           return callback(err);
         }
 
-        options.encrypter.connectInternalClient(error => {
+        options.encrypter.connectInternalClient((error) => {
           if (error) return callback(error);
 
           callback(undefined, topology);
@@ -94,7 +97,7 @@ function createTopology(
   }
 
   // otherwise connect normally
-  topology.connect(options, err => {
+  topology.connect(options, (err) => {
     if (err) {
       topology.close({ force: true });
       return callback(err);

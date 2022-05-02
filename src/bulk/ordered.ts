@@ -1,10 +1,15 @@
-import type { Document } from '../bson.ts';
-import * as BSON from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoInvalidArgumentError } from '../error.ts';
-import type { DeleteStatement } from '../operations/delete.ts';
-import type { UpdateStatement } from '../operations/update.ts';
-import { Batch, BatchType, BulkOperationBase, BulkWriteOptions } from './common.ts';
+import type { Document } from "../bson.ts";
+import * as BSON from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import { MongoInvalidArgumentError } from "../error.ts";
+import type { DeleteStatement } from "../operations/delete.ts";
+import type { UpdateStatement } from "../operations/update.ts";
+import {
+  Batch,
+  BatchType,
+  BulkOperationBase,
+  BulkWriteOptions,
+} from "./common.ts";
 
 /** @public */
 export class OrderedBulkOperation extends BulkOperationBase {
@@ -14,22 +19,23 @@ export class OrderedBulkOperation extends BulkOperationBase {
 
   addToOperationsList(
     batchType: BatchType,
-    document: Document | UpdateStatement | DeleteStatement
+    document: Document | UpdateStatement | DeleteStatement,
   ): this {
     // Get the bsonSize
     const bsonSize = BSON.calculateObjectSize(document, {
       checkKeys: false,
       // Since we don't know what the user selected for BSON options here,
       // err on the safe side, and check the size with ignoreUndefined: false.
-      ignoreUndefined: false
+      ignoreUndefined: false,
     } as any);
 
     // Throw error if the doc is bigger than the max BSON size
-    if (bsonSize >= this.s.maxBsonObjectSize)
+    if (bsonSize >= this.s.maxBsonObjectSize) {
       // TODO(NODE-3483): Change this to MongoBSONError
       throw new MongoInvalidArgumentError(
-        `Document is larger than the maximum size ${this.s.maxBsonObjectSize}`
+        `Document is larger than the maximum size ${this.s.maxBsonObjectSize}`,
       );
+    }
 
     // Create a new batch object if we don't have a current one
     if (this.s.currentBatch == null) {
@@ -45,7 +51,8 @@ export class OrderedBulkOperation extends BulkOperationBase {
       // New batch if we exceed the maxBatchSizeBytes. Only matters if batch already has a doc,
       // since we can't sent an empty batch
       (this.s.currentBatchSize > 0 &&
-        this.s.currentBatchSizeBytes + maxKeySize + bsonSize >= this.s.maxBatchSizeBytes) ||
+        this.s.currentBatchSizeBytes + maxKeySize + bsonSize >=
+          this.s.maxBatchSizeBytes) ||
       // New batch if the new op does not have the same op type as the current batch
       this.s.currentBatch.batchType !== batchType
     ) {
@@ -63,13 +70,15 @@ export class OrderedBulkOperation extends BulkOperationBase {
     if (batchType === BatchType.INSERT) {
       this.s.bulkResult.insertedIds.push({
         index: this.s.currentIndex,
-        _id: (document as Document)._id
+        _id: (document as Document)._id,
       });
     }
 
     // We have an array of documents
     if (Array.isArray(document)) {
-      throw new MongoInvalidArgumentError('Operation passed in cannot be an Array');
+      throw new MongoInvalidArgumentError(
+        "Operation passed in cannot be an Array",
+      );
     }
 
     this.s.currentBatch.originalIndexes.push(this.s.currentIndex);

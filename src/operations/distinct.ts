@@ -1,11 +1,16 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoCompatibilityError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, decorateWithCollation, decorateWithReadConcern, maxWireVersion } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import { MongoCompatibilityError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import {
+  Callback,
+  decorateWithCollation,
+  decorateWithReadConcern,
+  maxWireVersion,
+} from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export type DistinctOptions = CommandOperationOptions;
@@ -30,7 +35,12 @@ export class DistinctOperation extends CommandOperation<any[]> {
    * @param query - The query for filtering the set of documents to which we apply the distinct filter.
    * @param options - Optional settings. See Collection.prototype.distinct for a list of options.
    */
-  constructor(collection: Collection, key: string, query: Document, options?: DistinctOptions) {
+  constructor(
+    collection: Collection,
+    key: string,
+    query: Document,
+    options?: DistinctOptions,
+  ) {
     super(collection, options);
 
     this.options = options ?? {};
@@ -42,7 +52,7 @@ export class DistinctOperation extends CommandOperation<any[]> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<any[]>
+    callback: Callback<any[]>,
   ): void {
     const coll = this.collection;
     const key = this.key;
@@ -53,11 +63,11 @@ export class DistinctOperation extends CommandOperation<any[]> {
     const cmd: Document = {
       distinct: coll.collectionName,
       key: key,
-      query: query
+      query: query,
     };
 
     // Add maxTimeMS if defined
-    if (typeof options.maxTimeMS === 'number') {
+    if (typeof options.maxTimeMS === "number") {
       cmd.maxTimeMS = options.maxTimeMS;
     }
 
@@ -73,7 +83,9 @@ export class DistinctOperation extends CommandOperation<any[]> {
 
     if (this.explain && maxWireVersion(server) < 4) {
       callback(
-        new MongoCompatibilityError(`Server ${server.name} does not support explain on distinct`)
+        new MongoCompatibilityError(
+          `Server ${server.name} does not support explain on distinct`,
+        ),
       );
       return;
     }
@@ -89,4 +101,8 @@ export class DistinctOperation extends CommandOperation<any[]> {
   }
 }
 
-defineAspects(DistinctOperation, [Aspect.READ_OPERATION, Aspect.RETRYABLE, Aspect.EXPLAINABLE]);
+defineAspects(DistinctOperation, [
+  Aspect.READ_OPERATION,
+  Aspect.RETRYABLE,
+  Aspect.EXPLAINABLE,
+]);

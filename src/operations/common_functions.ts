@@ -1,10 +1,10 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import type { Db } from '../db.ts';
-import { MongoTopologyClosedError } from '../error.ts';
-import type { ReadPreference } from '../read_preference.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, getTopology } from '../utils.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import type { Db } from "../db.ts";
+import { MongoTopologyClosedError } from "../error.ts";
+import type { ReadPreference } from "../read_preference.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, getTopology } from "../utils.ts";
 
 /** @public */
 export interface IndexInformationOptions {
@@ -18,22 +18,26 @@ export interface IndexInformationOptions {
  * @param db - The Db instance on which to retrieve the index info.
  * @param name - The name of the collection.
  */
-export function indexInformation(db: Db, name: string, callback: Callback): void;
+export function indexInformation(
+  db: Db,
+  name: string,
+  callback: Callback,
+): void;
 export function indexInformation(
   db: Db,
   name: string,
   options: IndexInformationOptions,
-  callback?: Callback
+  callback?: Callback,
 ): void;
 export function indexInformation(
   db: Db,
   name: string,
   _optionsOrCallback: IndexInformationOptions | Callback,
-  _callback?: Callback
+  _callback?: Callback,
 ): void {
   let options = _optionsOrCallback as IndexInformationOptions;
   let callback = _callback as Callback;
-  if ('function' === typeof _optionsOrCallback) {
+  if ("function" === typeof _optionsOrCallback) {
     callback = _optionsOrCallback as Callback;
     options = {};
   }
@@ -80,19 +84,18 @@ export function indexInformation(
 export function prepareDocs(
   coll: Collection,
   docs: Document[],
-  options: { forceServerObjectId?: boolean }
+  options: { forceServerObjectId?: boolean },
 ): Document[] {
-  const forceServerObjectId =
-    typeof options.forceServerObjectId === 'boolean'
-      ? options.forceServerObjectId
-      : coll.s.db.options?.forceServerObjectId;
+  const forceServerObjectId = typeof options.forceServerObjectId === "boolean"
+    ? options.forceServerObjectId
+    : coll.s.db.options?.forceServerObjectId;
 
   // no need to modify the docs if server sets the ObjectId
   if (forceServerObjectId === true) {
     return docs;
   }
 
-  return docs.map(doc => {
+  return docs.map((doc) => {
     if (doc._id == null) {
       doc._id = coll.s.pkFactory.createPk();
     }

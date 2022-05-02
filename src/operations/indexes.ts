@@ -1,64 +1,78 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { AbstractCursor } from '../cursor/abstract_cursor.ts';
-import type { Db } from '../db.ts';
-import { MongoCompatibilityError, MONGODB_ERROR_CODES, MongoServerError } from '../error.ts';
-import type { OneOrMore } from '../mongo_types.ts';
-import { ReadPreference } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import { AbstractCursor } from "../cursor/abstract_cursor.ts";
+import type { Db } from "../db.ts";
+import {
+  MongoCompatibilityError,
+  MONGODB_ERROR_CODES,
+  MongoServerError,
+} from "../error.ts";
+import type { OneOrMore } from "../mongo_types.ts";
+import { ReadPreference } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
 import {
   Callback,
   getTopology,
   maxWireVersion,
   MongoDBNamespace,
-  parseIndexOptions
-} from '../utils.ts';
+  parseIndexOptions,
+} from "../utils.ts";
 import {
   CollationOptions,
   CommandOperation,
   CommandOperationOptions,
-  OperationParent
-} from './command.ts';
-import { indexInformation, IndexInformationOptions } from './common_functions.ts';
-import { executeOperation, ExecutionResult } from './execute_operation.ts';
-import { AbstractOperation, Aspect, defineAspects } from './operation.ts';
+  OperationParent,
+} from "./command.ts";
+import {
+  indexInformation,
+  IndexInformationOptions,
+} from "./common_functions.ts";
+import { executeOperation, ExecutionResult } from "./execute_operation.ts";
+import { AbstractOperation, Aspect, defineAspects } from "./operation.ts";
 
 const VALID_INDEX_OPTIONS = new Set([
-  'background',
-  'unique',
-  'name',
-  'partialFilterExpression',
-  'sparse',
-  'hidden',
-  'expireAfterSeconds',
-  'storageEngine',
-  'collation',
-  'version',
+  "background",
+  "unique",
+  "name",
+  "partialFilterExpression",
+  "sparse",
+  "hidden",
+  "expireAfterSeconds",
+  "storageEngine",
+  "collation",
+  "version",
 
   // text indexes
-  'weights',
-  'default_language',
-  'language_override',
-  'textIndexVersion',
+  "weights",
+  "default_language",
+  "language_override",
+  "textIndexVersion",
 
   // 2d-sphere indexes
-  '2dsphereIndexVersion',
+  "2dsphereIndexVersion",
 
   // 2d indexes
-  'bits',
-  'min',
-  'max',
+  "bits",
+  "min",
+  "max",
 
   // geoHaystack Indexes
-  'bucketSize',
+  "bucketSize",
 
   // wildcard indexes
-  'wildcardProjection'
+  "wildcardProjection",
 ]);
 
 /** @public */
-export type IndexDirection = -1 | 1 | '2d' | '2dsphere' | 'text' | 'geoHaystack' | number;
+export type IndexDirection =
+  | -1
+  | 1
+  | "2d"
+  | "2dsphere"
+  | "text"
+  | "geoHaystack"
+  | number;
 
 /** @public */
 export type IndexSpecification = OneOrMore<
@@ -70,27 +84,27 @@ export type IndexSpecification = OneOrMore<
 >;
 
 /** @public */
-export interface IndexDescription
-  extends Pick<
+export interface IndexDescription extends
+  Pick<
     CreateIndexesOptions,
-    | 'background'
-    | 'unique'
-    | 'partialFilterExpression'
-    | 'sparse'
-    | 'hidden'
-    | 'expireAfterSeconds'
-    | 'storageEngine'
-    | 'version'
-    | 'weights'
-    | 'default_language'
-    | 'language_override'
-    | 'textIndexVersion'
-    | '2dsphereIndexVersion'
-    | 'bits'
-    | 'min'
-    | 'max'
-    | 'bucketSize'
-    | 'wildcardProjection'
+    | "background"
+    | "unique"
+    | "partialFilterExpression"
+    | "sparse"
+    | "hidden"
+    | "expireAfterSeconds"
+    | "storageEngine"
+    | "version"
+    | "weights"
+    | "default_language"
+    | "language_override"
+    | "textIndexVersion"
+    | "2dsphereIndexVersion"
+    | "bits"
+    | "min"
+    | "max"
+    | "bucketSize"
+    | "wildcardProjection"
   > {
   collation?: CollationOptions;
   name?: string;
@@ -123,7 +137,7 @@ export interface CreateIndexesOptions extends CommandOperationOptions {
   language_override?: string;
   textIndexVersion?: number;
   // 2d-sphere indexes
-  '2dsphereIndexVersion'?: number;
+  "2dsphereIndexVersion"?: number;
   // 2d indexes
   bits?: number;
   /** For geospatial indexes set the lower bound for the co-ordinates. */
@@ -138,11 +152,16 @@ export interface CreateIndexesOptions extends CommandOperationOptions {
   hidden?: boolean;
 }
 
-function makeIndexSpec(indexSpec: IndexSpecification, options: any): IndexDescription {
+function makeIndexSpec(
+  indexSpec: IndexSpecification,
+  options: any,
+): IndexDescription {
   const indexParameters = parseIndexOptions(indexSpec);
 
   // Generate the index name
-  const name = typeof options.name === 'string' ? options.name : indexParameters.name;
+  const name = typeof options.name === "string"
+    ? options.name
+    : indexParameters.name;
 
   // Set up the index
   const finalIndexSpec: Document = { name, key: indexParameters.fieldHash };
@@ -171,7 +190,7 @@ export class IndexesOperation extends AbstractOperation<Document[]> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document[]>
+    callback: Callback<Document[]>,
   ): void {
     const coll = this.collection;
     const options = this.options;
@@ -180,14 +199,14 @@ export class IndexesOperation extends AbstractOperation<Document[]> {
       coll.s.db,
       coll.collectionName,
       { full: true, ...options, readPreference: this.readPreference, session },
-      callback
+      callback,
     );
   }
 }
 
 /** @internal */
 export class CreateIndexesOperation<
-  T extends string | string[] = string[]
+  T extends string | string[] = string[],
 > extends CommandOperation<T> {
   override options: CreateIndexesOptions;
   collectionName: string;
@@ -197,7 +216,7 @@ export class CreateIndexesOperation<
     parent: OperationParent,
     collectionName: string,
     indexes: IndexDescription[],
-    options?: CreateIndexesOptions
+    options?: CreateIndexesOptions,
   ) {
     super(parent, options);
 
@@ -210,7 +229,7 @@ export class CreateIndexesOperation<
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<T>
+    callback: Callback<T>,
   ): void {
     const options = this.options;
     const indexes = this.indexes;
@@ -224,8 +243,8 @@ export class CreateIndexesOperation<
         callback(
           new MongoCompatibilityError(
             `Server ${server.name}, which reports wire version ${serverWireVersion}, ` +
-              'does not support collation'
-          )
+              "does not support collation",
+          ),
         );
         return;
       }
@@ -238,7 +257,7 @@ export class CreateIndexesOperation<
         }
 
         // Set the name
-        indexes[i].name = keys.join('_');
+        indexes[i].name = keys.join("_");
       }
     }
 
@@ -248,8 +267,8 @@ export class CreateIndexesOperation<
       if (serverWireVersion < 9) {
         callback(
           new MongoCompatibilityError(
-            'Option `commitQuorum` for `createIndexes` not supported on servers < 4.4'
-          )
+            "Option `commitQuorum` for `createIndexes` not supported on servers < 4.4",
+          ),
         );
         return;
       }
@@ -259,13 +278,13 @@ export class CreateIndexesOperation<
     // collation is set on each index, it should not be defined at the root
     this.options.collation = undefined;
 
-    super.executeCommand(server, session, cmd, err => {
+    super.executeCommand(server, session, cmd, (err) => {
       if (err) {
         callback(err);
         return;
       }
 
-      const indexNames = indexes.map(index => index.name || '');
+      const indexNames = indexes.map((index) => index.name || "");
       callback(undefined, indexNames as T);
     });
   }
@@ -277,7 +296,7 @@ export class CreateIndexOperation extends CreateIndexesOperation<string> {
     parent: OperationParent,
     collectionName: string,
     indexSpec: IndexSpecification,
-    options?: CreateIndexesOptions
+    options?: CreateIndexesOptions,
   ) {
     // createIndex can be called with a variety of styles:
     //   coll.createIndex('a');
@@ -290,7 +309,7 @@ export class CreateIndexOperation extends CreateIndexesOperation<string> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<string>
+    callback: Callback<string>,
   ): void {
     super.execute(server, session, (err, indexNames) => {
       if (err || !indexNames) return callback(err);
@@ -307,7 +326,7 @@ export class EnsureIndexOperation extends CreateIndexOperation {
     db: Db,
     collectionName: string,
     indexSpec: IndexSpecification,
-    options?: CreateIndexesOptions
+    options?: CreateIndexesOptions,
   ) {
     super(db, collectionName, indexSpec, options);
 
@@ -316,18 +335,27 @@ export class EnsureIndexOperation extends CreateIndexOperation {
     this.collectionName = collectionName;
   }
 
-  override execute(server: Server, session: ClientSession | undefined, callback: Callback): void {
+  override execute(
+    server: Server,
+    session: ClientSession | undefined,
+    callback: Callback,
+  ): void {
     const indexName = this.indexes[0].name;
-    const cursor = this.db.collection(this.collectionName).listIndexes({ session });
+    const cursor = this.db.collection(this.collectionName).listIndexes({
+      session,
+    });
     cursor.toArray((err, indexes) => {
       /// ignore "NamespaceNotFound" errors
-      if (err && (err as MongoServerError).code !== MONGODB_ERROR_CODES.NamespaceNotFound) {
+      if (
+        err &&
+        (err as MongoServerError).code !== MONGODB_ERROR_CODES.NamespaceNotFound
+      ) {
         return callback(err);
       }
 
       if (indexes) {
         indexes = Array.isArray(indexes) ? indexes : [indexes];
-        if (indexes.some(index => index.name === indexName)) {
+        if (indexes.some((index) => index.name === indexName)) {
           callback(undefined, indexName);
           return;
         }
@@ -347,7 +375,11 @@ export class DropIndexOperation extends CommandOperation<Document> {
   collection: Collection;
   indexName: string;
 
-  constructor(collection: Collection, indexName: string, options?: DropIndexesOptions) {
+  constructor(
+    collection: Collection,
+    indexName: string,
+    options?: DropIndexesOptions,
+  ) {
     super(collection, options);
 
     this.options = options ?? {};
@@ -358,9 +390,12 @@ export class DropIndexOperation extends CommandOperation<Document> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
-    const cmd = { dropIndexes: this.collection.collectionName, index: this.indexName };
+    const cmd = {
+      dropIndexes: this.collection.collectionName,
+      index: this.indexName,
+    };
     super.executeCommand(server, session, cmd, callback);
   }
 }
@@ -368,11 +403,15 @@ export class DropIndexOperation extends CommandOperation<Document> {
 /** @internal */
 export class DropIndexesOperation extends DropIndexOperation {
   constructor(collection: Collection, options: DropIndexesOptions) {
-    super(collection, '*', options);
+    super(collection, "*", options);
   }
 
-  override execute(server: Server, session: ClientSession | undefined, callback: Callback): void {
-    super.execute(server, session, err => {
+  override execute(
+    server: Server,
+    session: ClientSession | undefined,
+    callback: Callback,
+  ): void {
+    super.execute(server, session, (err) => {
       if (err) return callback(err, false);
       callback(undefined, true);
     });
@@ -400,13 +439,18 @@ export class ListIndexesOperation extends CommandOperation<Document> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     const serverWireVersion = maxWireVersion(server);
 
-    const cursor = this.options.batchSize ? { batchSize: this.options.batchSize } : {};
+    const cursor = this.options.batchSize
+      ? { batchSize: this.options.batchSize }
+      : {};
 
-    const command: Document = { listIndexes: this.collectionNamespace.collection, cursor };
+    const command: Document = {
+      listIndexes: this.collectionNamespace.collection,
+      cursor,
+    };
 
     // we check for undefined specifically here to allow falsy values
     // eslint-disable-next-line no-restricted-syntax
@@ -432,16 +476,19 @@ export class ListIndexesCursor extends AbstractCursor {
   clone(): ListIndexesCursor {
     return new ListIndexesCursor(this.parent, {
       ...this.options,
-      ...this.cursorOptions
+      ...this.cursorOptions,
     });
   }
 
   /** @internal */
-  _initialize(session: ClientSession | undefined, callback: Callback<ExecutionResult>): void {
+  _initialize(
+    session: ClientSession | undefined,
+    callback: Callback<ExecutionResult>,
+  ): void {
     const operation = new ListIndexesOperation(this.parent, {
       ...this.cursorOptions,
       ...this.options,
-      session
+      session,
     });
 
     executeOperation(this.parent, operation, (err, response) => {
@@ -462,7 +509,7 @@ export class IndexExistsOperation extends AbstractOperation<boolean> {
   constructor(
     collection: Collection,
     indexes: string | string[],
-    options: IndexInformationOptions
+    options: IndexInformationOptions,
   ) {
     super(options);
     this.options = options;
@@ -473,7 +520,7 @@ export class IndexExistsOperation extends AbstractOperation<boolean> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<boolean>
+    callback: Callback<boolean>,
   ): void {
     const coll = this.collection;
     const indexes = this.indexes;
@@ -486,7 +533,9 @@ export class IndexExistsOperation extends AbstractOperation<boolean> {
         // If we have an error return
         if (err != null) return callback(err);
         // Let's check for the index names
-        if (!Array.isArray(indexes)) return callback(undefined, indexInformation[indexes] != null);
+        if (!Array.isArray(indexes)) {
+          return callback(undefined, indexInformation[indexes] != null);
+        }
         // Check in list of indexes
         for (let i = 0; i < indexes.length; i++) {
           if (indexInformation[indexes[i]] == null) {
@@ -496,7 +545,7 @@ export class IndexExistsOperation extends AbstractOperation<boolean> {
 
         // All keys found return true
         return callback(undefined, true);
-      }
+      },
     );
   }
 }
@@ -517,7 +566,7 @@ export class IndexInformationOperation extends AbstractOperation<Document> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     const db = this.db;
     const name = this.name;
@@ -526,7 +575,7 @@ export class IndexInformationOperation extends AbstractOperation<Document> {
       db,
       name,
       { ...this.options, readPreference: this.readPreference, session },
-      callback
+      callback,
     );
   }
 }
@@ -534,7 +583,7 @@ export class IndexInformationOperation extends AbstractOperation<Document> {
 defineAspects(ListIndexesOperation, [
   Aspect.READ_OPERATION,
   Aspect.RETRYABLE,
-  Aspect.CURSOR_CREATING
+  Aspect.CURSOR_CREATING,
 ]);
 defineAspects(CreateIndexesOperation, [Aspect.WRITE_OPERATION]);
 defineAspects(CreateIndexOperation, [Aspect.WRITE_OPERATION]);

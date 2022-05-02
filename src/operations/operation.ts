@@ -1,17 +1,17 @@
-import { BSONSerializeOptions, Document, resolveBSONOptions } from '../bson.ts';
-import { ReadPreference, ReadPreferenceLike } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback, MongoDBNamespace } from '../utils.ts';
+import { BSONSerializeOptions, Document, resolveBSONOptions } from "../bson.ts";
+import { ReadPreference, ReadPreferenceLike } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback, MongoDBNamespace } from "../utils.ts";
 
 export const Aspect = {
-  READ_OPERATION: Symbol('READ_OPERATION'),
-  WRITE_OPERATION: Symbol('WRITE_OPERATION'),
-  RETRYABLE: Symbol('RETRYABLE'),
-  EXPLAINABLE: Symbol('EXPLAINABLE'),
-  SKIP_COLLATION: Symbol('SKIP_COLLATION'),
-  CURSOR_CREATING: Symbol('CURSOR_CREATING'),
-  CURSOR_ITERATING: Symbol('CURSOR_ITERATING')
+  READ_OPERATION: Symbol("READ_OPERATION"),
+  WRITE_OPERATION: Symbol("WRITE_OPERATION"),
+  RETRYABLE: Symbol("RETRYABLE"),
+  EXPLAINABLE: Symbol("EXPLAINABLE"),
+  SKIP_COLLATION: Symbol("SKIP_COLLATION"),
+  CURSOR_CREATING: Symbol("CURSOR_CREATING"),
+  CURSOR_ITERATING: Symbol("CURSOR_ITERATING"),
 } as const;
 
 /** @public */
@@ -36,7 +36,7 @@ export interface OperationOptions extends BSONSerializeOptions {
 }
 
 /** @internal */
-const kSession = Symbol('session');
+const kSession = Symbol("session");
 
 /**
  * This class acts as a parent class for any operation and is responsible for setting this.options,
@@ -78,7 +78,7 @@ export abstract class AbstractOperation<TResult = any> {
   abstract execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<TResult>
+    callback: Callback<TResult>,
   ): void;
 
   hasAspect(aspect: symbol): boolean {
@@ -105,16 +105,16 @@ export abstract class AbstractOperation<TResult = any> {
 
 export function defineAspects(
   operation: OperationConstructor,
-  aspects: symbol | symbol[] | Set<symbol>
+  aspects: symbol | symbol[] | Set<symbol>,
 ): Set<symbol> {
   if (!Array.isArray(aspects) && !(aspects instanceof Set)) {
     aspects = [aspects];
   }
 
   aspects = new Set(aspects);
-  Object.defineProperty(operation, 'aspects', {
+  Object.defineProperty(operation, "aspects", {
     value: aspects,
-    writable: false
+    writable: false,
   });
 
   return aspects;

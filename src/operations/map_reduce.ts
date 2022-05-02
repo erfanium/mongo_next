@@ -1,56 +1,61 @@
-import type { ObjectId } from '../bson.ts';
-import { Code, Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoCompatibilityError, MongoServerError } from '../error.ts';
-import { ReadPreference, ReadPreferenceMode } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Sort } from '../sort.ts';
+import type { ObjectId } from "../bson.ts";
+import { Code, Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import { MongoCompatibilityError, MongoServerError } from "../error.ts";
+import { ReadPreference, ReadPreferenceMode } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Sort } from "../sort.ts";
 import {
   applyWriteConcern,
   Callback,
   decorateWithCollation,
   decorateWithReadConcern,
   isObject,
-  maxWireVersion
-} from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+  maxWireVersion,
+} from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 const exclusionList = [
-  'explain',
-  'readPreference',
-  'readConcern',
-  'session',
-  'bypassDocumentValidation',
-  'writeConcern',
-  'raw',
-  'fieldsAsRaw',
-  'promoteLongs',
-  'promoteValues',
-  'promoteBuffers',
-  'bsonRegExp',
-  'serializeFunctions',
-  'ignoreUndefined',
-  'enableUtf8Validation',
-  'scope' // this option is reformatted thus exclude the original
+  "explain",
+  "readPreference",
+  "readConcern",
+  "session",
+  "bypassDocumentValidation",
+  "writeConcern",
+  "raw",
+  "fieldsAsRaw",
+  "promoteLongs",
+  "promoteValues",
+  "promoteBuffers",
+  "bsonRegExp",
+  "serializeFunctions",
+  "ignoreUndefined",
+  "enableUtf8Validation",
+  "scope", // this option is reformatted thus exclude the original
 ];
 
 /** @public */
 export type MapFunction<TSchema = Document> = (this: TSchema) => void;
 /** @public */
-export type ReduceFunction<TKey = ObjectId, TValue = any> = (key: TKey, values: TValue[]) => TValue;
+export type ReduceFunction<TKey = ObjectId, TValue = any> = (
+  key: TKey,
+  values: TValue[],
+) => TValue;
 /** @public */
 export type FinalizeFunction<TKey = ObjectId, TValue = Document> = (
   key: TKey,
-  reducedValue: TValue
+  reducedValue: TValue,
 ) => TValue;
 
 /** @public */
 export interface MapReduceOptions<TKey = ObjectId, TValue = Document>
   extends CommandOperationOptions {
   /** Sets the output target for the map reduce job. */
-  out?: 'inline' | { inline: 1 } | { replace: string } | { merge: string } | { reduce: string };
+  out?: "inline" | { inline: 1 } | { replace: string } | { merge: string } | {
+    reduce: string;
+  };
   /** Query filter object. */
   query?: Document;
   /** Sorts the input objects using this key. Useful for optimization, like sorting by the emit key for fewer reduces. */
@@ -81,7 +86,8 @@ interface MapReduceStats {
  * Run Map Reduce across a collection. Be aware that the inline option for out will return an array of results not a collection.
  * @internal
  */
-export class MapReduceOperation extends CommandOperation<Document | Document[]> {
+export class MapReduceOperation
+  extends CommandOperation<Document | Document[]> {
   override options: MapReduceOptions;
   collection: Collection;
   /** The mapping function. */
@@ -101,7 +107,7 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
     collection: Collection,
     map: MapFunction | string,
     reduce: ReduceFunction | string,
-    options?: MapReduceOptions
+    options?: MapReduceOptions,
   ) {
     super(collection, options);
 
@@ -114,7 +120,7 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document | Document[]>
+    callback: Callback<Document | Document[]>,
   ): void {
     const coll = this.collection;
     const map = this.map;
@@ -124,7 +130,7 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
     const mapCommandHash: Document = {
       mapReduce: coll.collectionName,
       map: map,
-      reduce: reduce
+      reduce: reduce,
     };
 
     if (options.scope) {
@@ -146,19 +152,24 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
       this.readPreference.mode === ReadPreferenceMode.primary &&
       options.out &&
       (options.out as any).inline !== 1 &&
-      options.out !== 'inline'
+      options.out !== "inline"
     ) {
       // Force readPreference to primary
       options.readPreference = ReadPreference.primary;
       // Decorate command with writeConcern if supported
-      applyWriteConcern(mapCommandHash, { db: coll.s.db, collection: coll }, options);
+      applyWriteConcern(
+        mapCommandHash,
+        { db: coll.s.db, collection: coll },
+        options,
+      );
     } else {
       decorateWithReadConcern(mapCommandHash, coll, options);
     }
 
     // Is bypassDocumentValidation specified
     if (options.bypassDocumentValidation === true) {
-      mapCommandHash.bypassDocumentValidation = options.bypassDocumentValidation;
+      mapCommandHash.bypassDocumentValidation =
+        options.bypassDocumentValidation;
     }
 
     // Have we specified collation
@@ -170,7 +181,9 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
 
     if (this.explain && maxWireVersion(server) < 9) {
       callback(
-        new MongoCompatibilityError(`Server ${server.name} does not support explain on mapReduce`)
+        new MongoCompatibilityError(
+          `Server ${server.name} does not support explain on mapReduce`,
+        ),
       );
       return;
     }
@@ -188,14 +201,14 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
 
       // Create statistics value
       const stats: MapReduceStats = {};
-      if (result.timeMillis) stats['processtime'] = result.timeMillis;
-      if (result.counts) stats['counts'] = result.counts;
-      if (result.timing) stats['timing'] = result.timing;
+      if (result.timeMillis) stats["processtime"] = result.timeMillis;
+      if (result.counts) stats["counts"] = result.counts;
+      if (result.timing) stats["timing"] = result.timing;
 
       // invoked with inline?
       if (result.results) {
         // If we wish for no verbosity
-        if (options['verbose'] == null || !options['verbose']) {
+        if (options["verbose"] == null || !options["verbose"]) {
           return callback(undefined, result.results);
         }
 
@@ -206,17 +219,18 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
       let collection = null;
 
       // If we have an object it's a different db
-      if (result.result != null && typeof result.result === 'object') {
+      if (result.result != null && typeof result.result === "object") {
         const doc = result.result;
         // Return a collection from another db
-        collection = coll.s.db.s.client.db(doc.db, coll.s.db.s.options).collection(doc.collection);
+        collection = coll.s.db.s.client.db(doc.db, coll.s.db.s.options)
+          .collection(doc.collection);
       } else {
         // Create a collection object that wraps the result collection
         collection = coll.s.db.collection(result.result);
       }
 
       // If we wish for no verbosity
-      if (options['verbose'] == null || !options['verbose']) {
+      if (options["verbose"] == null || !options["verbose"]) {
         return callback(err, collection);
       }
 
@@ -228,16 +242,16 @@ export class MapReduceOperation extends CommandOperation<Document | Document[]> 
 
 /** Functions that are passed as scope args must be converted to Code instances. */
 function processScope(scope: Document | ObjectId) {
-  if (!isObject(scope) || (scope as any)._bsontype === 'ObjectID') {
+  if (!isObject(scope) || (scope as any)._bsontype === "ObjectID") {
     return scope;
   }
 
   const newScope: Document = {};
 
   for (const key of Object.keys(scope)) {
-    if ('function' === typeof (scope as Document)[key]) {
+    if ("function" === typeof (scope as Document)[key]) {
       newScope[key] = new Code(String((scope as Document)[key]));
-    } else if ((scope as Document)[key]._bsontype === 'Code') {
+    } else if ((scope as Document)[key]._bsontype === "Code") {
       newScope[key] = (scope as Document)[key];
     } else {
       newScope[key] = processScope((scope as Document)[key]);

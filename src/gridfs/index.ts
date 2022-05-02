@@ -1,29 +1,33 @@
-import type { ObjectId } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import type { FindCursor } from '../cursor/find_cursor.ts';
-import type { Db } from '../db.ts';
-import { MongoRuntimeError } from '../error.ts';
-import type { Logger } from '../logger.ts';
-import { Filter, TypedEventEmitter } from '../mongo_types.ts';
-import type { ReadPreference } from '../read_preference.ts';
-import type { Sort } from '../sort.ts';
-import { Callback, maybePromise } from '../utils.ts';
-import { WriteConcern, WriteConcernOptions } from '../write_concern.ts';
-import type { FindOptions } from './../operations/find.ts';
+import type { ObjectId } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import type { FindCursor } from "../cursor/find_cursor.ts";
+import type { Db } from "../db.ts";
+import { MongoRuntimeError } from "../error.ts";
+import type { Logger } from "../logger.ts";
+import { Filter, TypedEventEmitter } from "../mongo_types.ts";
+import type { ReadPreference } from "../read_preference.ts";
+import type { Sort } from "../sort.ts";
+import { Callback, maybePromise } from "../utils.ts";
+import { WriteConcern, WriteConcernOptions } from "../write_concern.ts";
+import type { FindOptions } from "./../operations/find.ts";
 import {
   GridFSBucketReadStream,
   GridFSBucketReadStreamOptions,
   GridFSBucketReadStreamOptionsWithRevision,
-  GridFSFile
-} from './download.ts';
-import { GridFSBucketWriteStream, GridFSBucketWriteStreamOptions, GridFSChunk } from './upload.ts';
+  GridFSFile,
+} from "./download.ts";
+import {
+  GridFSBucketWriteStream,
+  GridFSBucketWriteStreamOptions,
+  GridFSChunk,
+} from "./upload.ts";
 
 const DEFAULT_GRIDFS_BUCKET_OPTIONS: {
   bucketName: string;
   chunkSizeBytes: number;
 } = {
-  bucketName: 'fs',
-  chunkSizeBytes: 255 * 1024
+  bucketName: "fs",
+  chunkSizeBytes: 255 * 1024,
 };
 
 /** @public */
@@ -72,7 +76,7 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
    * necessary indexes.
    * @event
    */
-  static readonly INDEX = 'index' as const;
+  static readonly INDEX = "index" as const;
 
   constructor(db: Db, options?: GridFSBucketOptions) {
     super();
@@ -80,15 +84,19 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
     const privateOptions = {
       ...DEFAULT_GRIDFS_BUCKET_OPTIONS,
       ...options,
-      writeConcern: WriteConcern.fromOptions(options)
+      writeConcern: WriteConcern.fromOptions(options),
     };
     this.s = {
       db,
       options: privateOptions,
-      _chunksCollection: db.collection<GridFSChunk>(privateOptions.bucketName + '.chunks'),
-      _filesCollection: db.collection<GridFSFile>(privateOptions.bucketName + '.files'),
+      _chunksCollection: db.collection<GridFSChunk>(
+        privateOptions.bucketName + ".chunks",
+      ),
+      _filesCollection: db.collection<GridFSFile>(
+        privateOptions.bucketName + ".files",
+      ),
       checkedIndexes: false,
-      calledOpenUploadStream: false
+      calledOpenUploadStream: false,
     };
   }
 
@@ -103,7 +111,7 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
 
   openUploadStream(
     filename: string,
-    options?: GridFSBucketWriteStreamOptions
+    options?: GridFSBucketWriteStreamOptions,
   ): GridFSBucketWriteStream {
     return new GridFSBucketWriteStream(this, filename, options);
   }
@@ -116,7 +124,7 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
   openUploadStreamWithId(
     id: ObjectId,
     filename: string,
-    options?: GridFSBucketWriteStreamOptions
+    options?: GridFSBucketWriteStreamOptions,
   ): GridFSBucketWriteStream {
     return new GridFSBucketWriteStream(this, filename, { ...options, id });
   }
@@ -124,14 +132,14 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
   /** Returns a readable stream (GridFSBucketReadStream) for streaming file data from GridFS. */
   openDownloadStream(
     id: ObjectId,
-    options?: GridFSBucketReadStreamOptions
+    options?: GridFSBucketReadStreamOptions,
   ): GridFSBucketReadStream {
     return new GridFSBucketReadStream(
       this.s._chunksCollection,
       this.s._filesCollection,
       this.s.options.readPreference,
       { _id: id },
-      options
+      options,
     );
   }
 
@@ -143,32 +151,40 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
   delete(id: ObjectId): Promise<void>;
   delete(id: ObjectId, callback: Callback<void>): void;
   delete(id: ObjectId, callback?: Callback<void>): Promise<void> | void {
-    return maybePromise(callback, callback => {
+    return maybePromise(callback, (callback) => {
       return this.s._filesCollection.deleteOne({ _id: id }, (error, res) => {
         if (error) {
           return callback(error);
         }
 
-        return this.s._chunksCollection.deleteMany({ files_id: id }, error => {
-          if (error) {
-            return callback(error);
-          }
+        return this.s._chunksCollection.deleteMany(
+          { files_id: id },
+          (error) => {
+            if (error) {
+              return callback(error);
+            }
 
-          // Delete orphaned chunks before returning FileNotFound
-          if (!res?.deletedCount) {
-            // TODO(NODE-3483): Replace with more appropriate error
-            // Consider creating new error MongoGridFSFileNotFoundError
-            return callback(new MongoRuntimeError(`File not found for id ${id}`));
-          }
+            // Delete orphaned chunks before returning FileNotFound
+            if (!res?.deletedCount) {
+              // TODO(NODE-3483): Replace with more appropriate error
+              // Consider creating new error MongoGridFSFileNotFoundError
+              return callback(
+                new MongoRuntimeError(`File not found for id ${id}`),
+              );
+            }
 
-          return callback();
-        });
+            return callback();
+          },
+        );
       });
     });
   }
 
   /** Convenience wrapper around find on the files collection */
-  find(filter?: Filter<GridFSFile>, options?: FindOptions): FindCursor<GridFSFile> {
+  find(
+    filter?: Filter<GridFSFile>,
+    options?: FindOptions,
+  ): FindCursor<GridFSFile> {
     filter ??= {};
     options = options ?? {};
     return this.s._filesCollection.find(filter, options);
@@ -183,7 +199,7 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
    */
   openDownloadStreamByName(
     filename: string,
-    options?: GridFSBucketReadStreamOptionsWithRevision
+    options?: GridFSBucketReadStreamOptionsWithRevision,
   ): GridFSBucketReadStream {
     let sort: Sort = { uploadDate: -1 };
     let skip = undefined;
@@ -200,7 +216,7 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
       this.s._filesCollection,
       this.s.options.readPreference,
       { filename },
-      { ...options, sort, skip }
+      { ...options, sort, skip },
     );
   }
 
@@ -212,21 +228,31 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
    */
   rename(id: ObjectId, filename: string): Promise<void>;
   rename(id: ObjectId, filename: string, callback: Callback<void>): void;
-  rename(id: ObjectId, filename: string, callback?: Callback<void>): Promise<void> | void {
-    return maybePromise(callback, callback => {
+  rename(
+    id: ObjectId,
+    filename: string,
+    callback?: Callback<void>,
+  ): Promise<void> | void {
+    return maybePromise(callback, (callback) => {
       const filter = { _id: id };
       const update = { $set: { filename } };
-      return this.s._filesCollection.updateOne(filter, update, (error?, res?) => {
-        if (error) {
-          return callback(error);
-        }
+      return this.s._filesCollection.updateOne(
+        filter,
+        update,
+        (error?, res?) => {
+          if (error) {
+            return callback(error);
+          }
 
-        if (!res?.matchedCount) {
-          return callback(new MongoRuntimeError(`File with id ${id} not found`));
-        }
+          if (!res?.matchedCount) {
+            return callback(
+              new MongoRuntimeError(`File with id ${id} not found`),
+            );
+          }
 
-        return callback();
-      });
+          return callback();
+        },
+      );
     });
   }
 
@@ -234,12 +260,12 @@ export class GridFSBucket extends TypedEventEmitter<GridFSBucketEvents> {
   drop(): Promise<void>;
   drop(callback: Callback<void>): void;
   drop(callback?: Callback<void>): Promise<void> | void {
-    return maybePromise(callback, callback => {
-      return this.s._filesCollection.drop(error => {
+    return maybePromise(callback, (callback) => {
+      return this.s._filesCollection.drop((error) => {
         if (error) {
           return callback(error);
         }
-        return this.s._chunksCollection.drop(error => {
+        return this.s._chunksCollection.drop((error) => {
           if (error) {
             return callback(error);
           }

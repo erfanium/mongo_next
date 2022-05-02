@@ -1,6 +1,6 @@
-import type { Document } from '../bson.ts';
-import type { ServerDescription } from './server_description.ts';
-import type { TopologyDescription } from './topology_description.ts';
+import type { Document } from "../bson.ts";
+import type { ServerDescription } from "./server_description.ts";
+import type { TopologyDescription } from "./topology_description.ts";
 
 /**
  * Emitted when server description changes, but does NOT include changes to the RTT.
@@ -22,7 +22,7 @@ export class ServerDescriptionChangedEvent {
     topologyId: number,
     address: string,
     previousDescription: ServerDescription,
-    newDescription: ServerDescription
+    newDescription: ServerDescription,
   ) {
     this.topologyId = topologyId;
     this.address = address;
@@ -84,7 +84,7 @@ export class TopologyDescriptionChangedEvent {
   constructor(
     topologyId: number,
     previousDescription: TopologyDescription,
-    newDescription: TopologyDescription
+    newDescription: TopologyDescription,
   ) {
     this.topologyId = topologyId;
     this.previousDescription = previousDescription;

@@ -1,12 +1,12 @@
-import type { Binary, Document } from '../bson.ts';
-import { AbstractCursor } from '../cursor/abstract_cursor.ts';
-import type { Db } from '../db.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, getTopology, maxWireVersion } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { executeOperation, ExecutionResult } from './execute_operation.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Binary, Document } from "../bson.ts";
+import { AbstractCursor } from "../cursor/abstract_cursor.ts";
+import type { Db } from "../db.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, getTopology, maxWireVersion } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { executeOperation, ExecutionResult } from "./execute_operation.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export interface ListCollectionsOptions extends CommandOperationOptions {
@@ -36,7 +36,7 @@ export class ListCollectionsOperation extends CommandOperation<string[]> {
     this.nameOnly = !!this.options.nameOnly;
     this.authorizedCollections = !!this.options.authorizedCollections;
 
-    if (typeof this.options.batchSize === 'number') {
+    if (typeof this.options.batchSize === "number") {
       this.batchSize = this.options.batchSize;
     }
   }
@@ -44,13 +44,13 @@ export class ListCollectionsOperation extends CommandOperation<string[]> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<string[]>
+    callback: Callback<string[]>,
   ): void {
     return super.executeCommand(
       server,
       session,
       this.generateCommand(maxWireVersion(server)),
-      callback
+      callback,
     );
   }
 
@@ -61,7 +61,7 @@ export class ListCollectionsOperation extends CommandOperation<string[]> {
       filter: this.filter,
       cursor: this.batchSize ? { batchSize: this.batchSize } : {},
       nameOnly: this.nameOnly,
-      authorizedCollections: this.authorizedCollections
+      authorizedCollections: this.authorizedCollections,
     };
 
     // we check for undefined specifically here to allow falsy values
@@ -88,9 +88,9 @@ export interface CollectionInfo extends Document {
 
 /** @public */
 export class ListCollectionsCursor<
-  T extends Pick<CollectionInfo, 'name' | 'type'> | CollectionInfo =
-    | Pick<CollectionInfo, 'name' | 'type'>
-    | CollectionInfo
+  T extends Pick<CollectionInfo, "name" | "type"> | CollectionInfo =
+    | Pick<CollectionInfo, "name" | "type">
+    | CollectionInfo,
 > extends AbstractCursor<T> {
   parent: Db;
   filter: Document;
@@ -106,16 +106,19 @@ export class ListCollectionsCursor<
   clone(): ListCollectionsCursor<T> {
     return new ListCollectionsCursor(this.parent, this.filter, {
       ...this.options,
-      ...this.cursorOptions
+      ...this.cursorOptions,
     });
   }
 
   /** @internal */
-  _initialize(session: ClientSession | undefined, callback: Callback<ExecutionResult>): void {
+  _initialize(
+    session: ClientSession | undefined,
+    callback: Callback<ExecutionResult>,
+  ): void {
     const operation = new ListCollectionsOperation(this.parent, this.filter, {
       ...this.cursorOptions,
       ...this.options,
-      session
+      session,
     });
 
     executeOperation(this.parent, operation, (err, response) => {
@@ -130,5 +133,5 @@ export class ListCollectionsCursor<
 defineAspects(ListCollectionsOperation, [
   Aspect.READ_OPERATION,
   Aspect.RETRYABLE,
-  Aspect.CURSOR_CREATING
+  Aspect.CURSOR_CREATING,
 ]);

@@ -1,19 +1,25 @@
-import type { Document } from './bson.ts';
+import type { Document } from "./bson.ts";
 
 /** @public */
-export const ReadConcernLevel = Object.freeze({
-  local: 'local',
-  majority: 'majority',
-  linearizable: 'linearizable',
-  available: 'available',
-  snapshot: 'snapshot'
-} as const);
+export const ReadConcernLevel = Object.freeze(
+  {
+    local: "local",
+    majority: "majority",
+    linearizable: "linearizable",
+    available: "available",
+    snapshot: "snapshot",
+  } as const,
+);
 
 /** @public */
-export type ReadConcernLevel = typeof ReadConcernLevel[keyof typeof ReadConcernLevel];
+export type ReadConcernLevel =
+  typeof ReadConcernLevel[keyof typeof ReadConcernLevel];
 
 /** @public */
-export type ReadConcernLike = ReadConcern | { level: ReadConcernLevel } | ReadConcernLevel;
+export type ReadConcernLike =
+  | ReadConcern
+  | { level: ReadConcernLevel }
+  | ReadConcernLevel;
 
 /**
  * The MongoDB ReadConcern, which allows for control of the consistency and isolation properties
@@ -53,9 +59,9 @@ export class ReadConcern {
       const { readConcern } = options;
       if (readConcern instanceof ReadConcern) {
         return readConcern;
-      } else if (typeof readConcern === 'string') {
+      } else if (typeof readConcern === "string") {
         return new ReadConcern(readConcern);
-      } else if ('level' in readConcern && readConcern.level) {
+      } else if ("level" in readConcern && readConcern.level) {
         return new ReadConcern(readConcern.level);
       }
     }
@@ -66,19 +72,19 @@ export class ReadConcern {
     return;
   }
 
-  static get MAJORITY(): 'majority' {
+  static get MAJORITY(): "majority" {
     return ReadConcernLevel.majority;
   }
 
-  static get AVAILABLE(): 'available' {
+  static get AVAILABLE(): "available" {
     return ReadConcernLevel.available;
   }
 
-  static get LINEARIZABLE(): 'linearizable' {
+  static get LINEARIZABLE(): "linearizable" {
     return ReadConcernLevel.linearizable;
   }
 
-  static get SNAPSHOT(): 'snapshot' {
+  static get SNAPSHOT(): "snapshot" {
     return ReadConcernLevel.snapshot;
   }
 

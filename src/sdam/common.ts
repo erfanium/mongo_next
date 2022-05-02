@@ -1,25 +1,27 @@
-import type { Binary, Long, Timestamp } from '../bson.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Topology } from './topology.ts';
+import type { Binary, Long, Timestamp } from "../bson.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Topology } from "./topology.ts";
 
 // shared state names
-export const STATE_CLOSING = 'closing';
-export const STATE_CLOSED = 'closed';
-export const STATE_CONNECTING = 'connecting';
-export const STATE_CONNECTED = 'connected';
+export const STATE_CLOSING = "closing";
+export const STATE_CLOSED = "closed";
+export const STATE_CONNECTING = "connecting";
+export const STATE_CONNECTED = "connected";
 
 /**
  * An enumeration of topology types we know about
  * @public
  */
-export const TopologyType = Object.freeze({
-  Single: 'Single',
-  ReplicaSetNoPrimary: 'ReplicaSetNoPrimary',
-  ReplicaSetWithPrimary: 'ReplicaSetWithPrimary',
-  Sharded: 'Sharded',
-  Unknown: 'Unknown',
-  LoadBalanced: 'LoadBalanced'
-} as const);
+export const TopologyType = Object.freeze(
+  {
+    Single: "Single",
+    ReplicaSetNoPrimary: "ReplicaSetNoPrimary",
+    ReplicaSetWithPrimary: "ReplicaSetWithPrimary",
+    Sharded: "Sharded",
+    Unknown: "Unknown",
+    LoadBalanced: "LoadBalanced",
+  } as const,
+);
 
 /** @public */
 export type TopologyType = typeof TopologyType[keyof typeof TopologyType];
@@ -28,24 +30,26 @@ export type TopologyType = typeof TopologyType[keyof typeof TopologyType];
  * An enumeration of server types we know about
  * @public
  */
-export const ServerType = Object.freeze({
-  Standalone: 'Standalone',
-  Mongos: 'Mongos',
-  PossiblePrimary: 'PossiblePrimary',
-  RSPrimary: 'RSPrimary',
-  RSSecondary: 'RSSecondary',
-  RSArbiter: 'RSArbiter',
-  RSOther: 'RSOther',
-  RSGhost: 'RSGhost',
-  Unknown: 'Unknown',
-  LoadBalancer: 'LoadBalancer'
-} as const);
+export const ServerType = Object.freeze(
+  {
+    Standalone: "Standalone",
+    Mongos: "Mongos",
+    PossiblePrimary: "PossiblePrimary",
+    RSPrimary: "RSPrimary",
+    RSSecondary: "RSSecondary",
+    RSArbiter: "RSArbiter",
+    RSOther: "RSOther",
+    RSGhost: "RSGhost",
+    Unknown: "Unknown",
+    LoadBalancer: "LoadBalancer",
+  } as const,
+);
 
 /** @public */
 export type ServerType = typeof ServerType[keyof typeof ServerType];
 
 /** @internal */
-export type TimerQueue = Set<NodeJS.Timeout>;
+export type TimerQueue = Set<number>;
 
 // TODO(erfan)
 export function drainTimerQueue(queue: TimerQueue): void {
@@ -65,7 +69,7 @@ export interface ClusterTime {
 /** Shared function to determine clusterTime for a given topology or session */
 export function _advanceClusterTime(
   entity: Topology | ClientSession,
-  $clusterTime: ClusterTime
+  $clusterTime: ClusterTime,
 ): void {
   if (entity.clusterTime == null) {
     entity.clusterTime = $clusterTime;

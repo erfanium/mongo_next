@@ -1,9 +1,9 @@
-import type { Db } from '../db.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Db } from "../db.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export type RemoveUserOptions = CommandOperationOptions;
@@ -22,11 +22,16 @@ export class RemoveUserOperation extends CommandOperation<boolean> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<boolean>
+    callback: Callback<boolean>,
   ): void {
-    super.executeCommand(server, session, { dropUser: this.username }, err => {
-      callback(err, err ? false : true);
-    });
+    super.executeCommand(
+      server,
+      session,
+      { dropUser: this.username },
+      (err) => {
+        callback(err, err ? false : true);
+      },
+    );
   }
 }
 

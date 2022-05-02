@@ -1,11 +1,12 @@
-import type { Socket, SocketConnectOpts } from 'net';
-import * as net from 'net';
-import type { ConnectionOptions as TLSConnectionOpts, TLSSocket } from 'tls';
-import * as tls from 'tls';
+import type { Socket, SocketConnectOpts } from "net";
+import * as net from "net";
+import type { ConnectionOptions as TLSConnectionOpts, TLSSocket } from "tls";
+import * as tls from "tls";
+import { nextTick } from "../../deps.ts";
 
-import type { Document } from '../bson.ts';
-import { Int32 } from '../bson.ts';
-import { LEGACY_HELLO_COMMAND } from '../constants.ts';
+import type { Document } from "../bson.ts";
+import { Int32 } from "../bson.ts";
+import { LEGACY_HELLO_COMMAND } from "../constants.ts";
 import {
   AnyError,
   MongoCompatibilityError,
@@ -16,26 +17,34 @@ import {
   MongoNetworkTimeoutError,
   MongoRuntimeError,
   MongoServerError,
-  needsRetryableWriteLabel
-} from '../error.ts';
-import { Callback, ClientMetadata, HostAddress, makeClientMetadata, ns } from '../utils.ts';
-import { AuthContext, AuthProvider } from './auth/auth_provider.ts';
-import { GSSAPI } from './auth/gssapi.ts';
-import { MongoCR } from './auth/mongocr.ts';
-import { MongoDBAWS } from './auth/mongodb_aws.ts';
-import { Plain } from './auth/plain.ts';
-import { AuthMechanism } from './auth/providers.ts';
-import { ScramSHA1, ScramSHA256 } from './auth/scram.ts';
-import { X509 } from './auth/x509.ts';
-import { Connection, ConnectionOptions, CryptoConnection } from './connection.ts';
+  needsRetryableWriteLabel,
+} from "../error.ts";
+import {
+  Callback,
+  ClientMetadata,
+  HostAddress,
+  makeClientMetadata,
+  ns,
+} from "../utils.ts";
+import { AuthContext, AuthProvider } from "./auth/auth_provider.ts";
+import { GSSAPI } from "./auth/gssapi.ts";
+import { MongoCR } from "./auth/mongocr.ts";
+import { MongoDBAWS } from "./auth/mongodb_aws.ts";
+import { Plain } from "./auth/plain.ts";
+import { AuthMechanism } from "./auth/providers.ts";
+import { ScramSHA1, ScramSHA256 } from "./auth/scram.ts";
+import { X509 } from "./auth/x509.ts";
+import {
+  Connection,
+  ConnectionOptions,
+  CryptoConnection,
+} from "./connection.ts";
 import {
   MAX_SUPPORTED_SERVER_VERSION,
   MAX_SUPPORTED_WIRE_VERSION,
   MIN_SUPPORTED_SERVER_VERSION,
-  MIN_SUPPORTED_WIRE_VERSION
-} from './wire_protocol/constants.ts';
-import { nextTick } from 'next-tick';
-
+  MIN_SUPPORTED_WIRE_VERSION,
+} from "./wire_protocol/constants.ts";
 
 const AUTH_PROVIDERS = new Map<AuthMechanism | string, AuthProvider>([
   [AuthMechanism.MONGODB_AWS, new MongoDBAWS()],
@@ -44,13 +53,16 @@ const AUTH_PROVIDERS = new Map<AuthMechanism | string, AuthProvider>([
   [AuthMechanism.MONGODB_PLAIN, new Plain()],
   [AuthMechanism.MONGODB_SCRAM_SHA1, new ScramSHA1()],
   [AuthMechanism.MONGODB_SCRAM_SHA256, new ScramSHA256()],
-  [AuthMechanism.MONGODB_X509, new X509()]
+  [AuthMechanism.MONGODB_X509, new X509()],
 ]);
 
 /** @public */
 export type Stream = Socket | TLSSocket;
 
-export function connect(options: ConnectionOptions, callback: Callback<Connection>): void {
+export function connect(
+  options: ConnectionOptions,
+  callback: Callback<Connection>,
+): void {
   makeConnection({ ...options, existingSocket: undefined }, (err, socket) => {
     if (err || !socket) {
       return callback(err);
@@ -60,18 +72,22 @@ export function connect(options: ConnectionOptions, callback: Callback<Connectio
     if (options.autoEncrypter) {
       ConnectionType = CryptoConnection;
     }
-    performInitialHandshake(new ConnectionType(socket, options), options, callback);
+    performInitialHandshake(
+      new ConnectionType(socket, options),
+      options,
+      callback,
+    );
   });
 }
 
 function checkSupportedServer(hello: Document, options: ConnectionOptions) {
-  const serverVersionHighEnough =
-    hello &&
-    (typeof hello.maxWireVersion === 'number' || hello.maxWireVersion instanceof Int32) &&
+  const serverVersionHighEnough = hello &&
+    (typeof hello.maxWireVersion === "number" ||
+      hello.maxWireVersion instanceof Int32) &&
     hello.maxWireVersion >= MIN_SUPPORTED_WIRE_VERSION;
-  const serverVersionLowEnough =
-    hello &&
-    (typeof hello.minWireVersion === 'number' || hello.minWireVersion instanceof Int32) &&
+  const serverVersionLowEnough = hello &&
+    (typeof hello.minWireVersion === "number" ||
+      hello.minWireVersion instanceof Int32) &&
     hello.minWireVersion <= MAX_SUPPORTED_WIRE_VERSION;
 
   if (serverVersionHighEnough) {
@@ -79,22 +95,26 @@ function checkSupportedServer(hello: Document, options: ConnectionOptions) {
       return null;
     }
 
-    const message = `Server at ${options.hostAddress} reports minimum wire version ${JSON.stringify(
-      hello.minWireVersion
-    )}, but this version of the Node.js Driver requires at most ${MAX_SUPPORTED_WIRE_VERSION} (MongoDB ${MAX_SUPPORTED_SERVER_VERSION})`;
+    const message =
+      `Server at ${options.hostAddress} reports minimum wire version ${
+        JSON.stringify(
+          hello.minWireVersion,
+        )
+      }, but this version of the Node.js Driver requires at most ${MAX_SUPPORTED_WIRE_VERSION} (MongoDB ${MAX_SUPPORTED_SERVER_VERSION})`;
     return new MongoCompatibilityError(message);
   }
 
-  const message = `Server at ${options.hostAddress} reports maximum wire version ${
-    JSON.stringify(hello.maxWireVersion) ?? 0
-  }, but this version of the Node.js Driver requires at least ${MIN_SUPPORTED_WIRE_VERSION} (MongoDB ${MIN_SUPPORTED_SERVER_VERSION})`;
+  const message =
+    `Server at ${options.hostAddress} reports maximum wire version ${
+      JSON.stringify(hello.maxWireVersion) ?? 0
+    }, but this version of the Node.js Driver requires at least ${MIN_SUPPORTED_WIRE_VERSION} (MongoDB ${MIN_SUPPORTED_SERVER_VERSION})`;
   return new MongoCompatibilityError(message);
 }
 
 function performInitialHandshake(
   conn: Connection,
   options: ConnectionOptions,
-  _callback: Callback
+  _callback: Callback,
 ) {
   const callback: Callback<Document> = function (err, ret) {
     if (err && conn) {
@@ -110,7 +130,9 @@ function performInitialHandshake(
       !AUTH_PROVIDERS.get(credentials.mechanism)
     ) {
       callback(
-        new MongoInvalidArgumentError(`AuthMechanism '${credentials.mechanism}' not supported`)
+        new MongoInvalidArgumentError(
+          `AuthMechanism '${credentials.mechanism}' not supported`,
+        ),
       );
       return;
     }
@@ -123,86 +145,93 @@ function performInitialHandshake(
     }
 
     const handshakeOptions: Document = Object.assign({}, options);
-    if (typeof options.connectTimeoutMS === 'number') {
+    if (typeof options.connectTimeoutMS === "number") {
       // The handshake technically is a monitoring check, so its socket timeout should be connectTimeoutMS
       handshakeOptions.socketTimeoutMS = options.connectTimeoutMS;
     }
 
     const start = new Date().getTime();
-    conn.command(ns('admin.$cmd'), handshakeDoc, handshakeOptions, (err, response) => {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      if (response?.ok === 0) {
-        callback(new MongoServerError(response));
-        return;
-      }
-
-      if (!('isWritablePrimary' in response)) {
-        // Provide hello-style response document.
-        response.isWritablePrimary = response[LEGACY_HELLO_COMMAND];
-      }
-
-      if (response.helloOk) {
-        conn.helloOk = true;
-      }
-
-      const supportedServerErr = checkSupportedServer(response, options);
-      if (supportedServerErr) {
-        callback(supportedServerErr);
-        return;
-      }
-
-      if (options.loadBalanced) {
-        if (!response.serviceId) {
-          return callback(
-            new MongoCompatibilityError(
-              'Driver attempted to initialize in load balancing mode, ' +
-                'but the server does not support this mode.'
-            )
-          );
+    conn.command(
+      ns("admin.$cmd"),
+      handshakeDoc,
+      handshakeOptions,
+      (err, response) => {
+        if (err) {
+          callback(err);
+          return;
         }
-      }
 
-      // NOTE: This is metadata attached to the connection while porting away from
-      //       handshake being done in the `Server` class. Likely, it should be
-      //       relocated, or at very least restructured.
-      conn.hello = response;
-      conn.lastHelloMS = new Date().getTime() - start;
-
-      if (!response.arbiterOnly && credentials) {
-        // store the response on auth context
-        authContext.response = response;
-
-        const resolvedCredentials = credentials.resolveAuthMechanism(response);
-        const provider = AUTH_PROVIDERS.get(resolvedCredentials.mechanism);
-        if (!provider) {
-          return callback(
-            new MongoInvalidArgumentError(
-              `No AuthProvider for ${resolvedCredentials.mechanism} defined.`
-            )
-          );
+        if (response?.ok === 0) {
+          callback(new MongoServerError(response));
+          return;
         }
-        provider.auth(authContext, err => {
-          if (err) {
-            if (err instanceof MongoError) {
-              err.addErrorLabel(MongoErrorLabel.HandshakeError);
-              if (needsRetryableWriteLabel(err, response.maxWireVersion)) {
-                err.addErrorLabel(MongoErrorLabel.RetryableWriteError);
-              }
-            }
-            return callback(err);
+
+        if (!("isWritablePrimary" in response)) {
+          // Provide hello-style response document.
+          response.isWritablePrimary = response[LEGACY_HELLO_COMMAND];
+        }
+
+        if (response.helloOk) {
+          conn.helloOk = true;
+        }
+
+        const supportedServerErr = checkSupportedServer(response, options);
+        if (supportedServerErr) {
+          callback(supportedServerErr);
+          return;
+        }
+
+        if (options.loadBalanced) {
+          if (!response.serviceId) {
+            return callback(
+              new MongoCompatibilityError(
+                "Driver attempted to initialize in load balancing mode, " +
+                  "but the server does not support this mode.",
+              ),
+            );
           }
-          callback(undefined, conn);
-        });
+        }
 
-        return;
-      }
+        // NOTE: This is metadata attached to the connection while porting away from
+        //       handshake being done in the `Server` class. Likely, it should be
+        //       relocated, or at very least restructured.
+        conn.hello = response;
+        conn.lastHelloMS = new Date().getTime() - start;
 
-      callback(undefined, conn);
-    });
+        if (!response.arbiterOnly && credentials) {
+          // store the response on auth context
+          authContext.response = response;
+
+          const resolvedCredentials = credentials.resolveAuthMechanism(
+            response,
+          );
+          const provider = AUTH_PROVIDERS.get(resolvedCredentials.mechanism);
+          if (!provider) {
+            return callback(
+              new MongoInvalidArgumentError(
+                `No AuthProvider for ${resolvedCredentials.mechanism} defined.`,
+              ),
+            );
+          }
+          provider.auth(authContext, (err) => {
+            if (err) {
+              if (err instanceof MongoError) {
+                err.addErrorLabel(MongoErrorLabel.HandshakeError);
+                if (needsRetryableWriteLabel(err, response.maxWireVersion)) {
+                  err.addErrorLabel(MongoErrorLabel.RetryableWriteError);
+                }
+              }
+              return callback(err);
+            }
+            callback(undefined, conn);
+          });
+
+          return;
+        }
+
+        callback(undefined, conn);
+      },
+    );
   });
 }
 
@@ -219,31 +248,38 @@ export interface HandshakeDocument extends Document {
   loadBalanced: boolean;
 }
 
-function prepareHandshakeDocument(authContext: AuthContext, callback: Callback<HandshakeDocument>) {
+function prepareHandshakeDocument(
+  authContext: AuthContext,
+  callback: Callback<HandshakeDocument>,
+) {
   const options = authContext.options;
   const compressors = options.compressors ? options.compressors : [];
   const { serverApi } = authContext.connection;
 
   const handshakeDoc: HandshakeDocument = {
-    [serverApi?.version ? 'hello' : LEGACY_HELLO_COMMAND]: true,
+    [serverApi?.version ? "hello" : LEGACY_HELLO_COMMAND]: true,
     helloOk: true,
     client: options.metadata || makeClientMetadata(options),
     compression: compressors,
-    loadBalanced: options.loadBalanced
+    loadBalanced: options.loadBalanced,
   };
 
   const credentials = authContext.credentials;
   if (credentials) {
-    if (credentials.mechanism === AuthMechanism.MONGODB_DEFAULT && credentials.username) {
-      handshakeDoc.saslSupportedMechs = `${credentials.source}.${credentials.username}`;
+    if (
+      credentials.mechanism === AuthMechanism.MONGODB_DEFAULT &&
+      credentials.username
+    ) {
+      handshakeDoc.saslSupportedMechs =
+        `${credentials.source}.${credentials.username}`;
 
       const provider = AUTH_PROVIDERS.get(AuthMechanism.MONGODB_SCRAM_SHA256);
       if (!provider) {
         // This auth mechanism is always present.
         return callback(
           new MongoInvalidArgumentError(
-            `No AuthProvider for ${AuthMechanism.MONGODB_SCRAM_SHA256} defined.`
-          )
+            `No AuthProvider for ${AuthMechanism.MONGODB_SCRAM_SHA256} defined.`,
+          ),
         );
       }
       return provider.prepare(handshakeDoc, authContext, callback);
@@ -251,7 +287,9 @@ function prepareHandshakeDocument(authContext: AuthContext, callback: Callback<H
     const provider = AUTH_PROVIDERS.get(credentials.mechanism);
     if (!provider) {
       return callback(
-        new MongoInvalidArgumentError(`No AuthProvider for ${credentials.mechanism} defined.`)
+        new MongoInvalidArgumentError(
+          `No AuthProvider for ${credentials.mechanism} defined.`,
+        ),
       );
     }
     return provider.prepare(handshakeDoc, authContext, callback);
@@ -261,36 +299,38 @@ function prepareHandshakeDocument(authContext: AuthContext, callback: Callback<H
 
 /** @public */
 export const LEGAL_TLS_SOCKET_OPTIONS = [
-  'ALPNProtocols',
-  'ca',
-  'cert',
-  'checkServerIdentity',
-  'ciphers',
-  'crl',
-  'ecdhCurve',
-  'key',
-  'minDHSize',
-  'passphrase',
-  'pfx',
-  'rejectUnauthorized',
-  'secureContext',
-  'secureProtocol',
-  'servername',
-  'session'
+  "ALPNProtocols",
+  "ca",
+  "cert",
+  "checkServerIdentity",
+  "ciphers",
+  "crl",
+  "ecdhCurve",
+  "key",
+  "minDHSize",
+  "passphrase",
+  "pfx",
+  "rejectUnauthorized",
+  "secureContext",
+  "secureProtocol",
+  "servername",
+  "session",
 ] as const;
 
 /** @public */
 export const LEGAL_TCP_SOCKET_OPTIONS = [
-  'family',
-  'hints',
-  'localAddress',
-  'localPort',
-  'lookup'
+  "family",
+  "hints",
+  "localAddress",
+  "localPort",
+  "lookup",
 ] as const;
 
 function parseConnectOptions(options: ConnectionOptions): SocketConnectOpts {
   const hostAddress = options.hostAddress;
-  if (!hostAddress) throw new MongoInvalidArgumentError('Option "hostAddress" is required');
+  if (!hostAddress) {
+    throw new MongoInvalidArgumentError('Option "hostAddress" is required');
+  }
 
   const result: Partial<net.TcpNetConnectOpts & net.IpcNetConnectOpts> = {};
   for (const name of LEGAL_TCP_SOCKET_OPTIONS) {
@@ -299,10 +339,10 @@ function parseConnectOptions(options: ConnectionOptions): SocketConnectOpts {
     }
   }
 
-  if (typeof hostAddress.socketPath === 'string') {
+  if (typeof hostAddress.socketPath === "string") {
     result.path = hostAddress.socketPath;
     return result as net.IpcNetConnectOpts;
-  } else if (typeof hostAddress.host === 'string') {
+  } else if (typeof hostAddress.host === "string") {
     result.host = hostAddress.host;
     result.port = hostAddress.port;
     return result as net.TcpNetConnectOpts;
@@ -310,7 +350,9 @@ function parseConnectOptions(options: ConnectionOptions): SocketConnectOpts {
     // This should never happen since we set up HostAddresses
     // But if we don't throw here the socket could hang until timeout
     // TODO(NODE-3483)
-    throw new MongoRuntimeError(`Unexpected HostAddress ${JSON.stringify(hostAddress)}`);
+    throw new MongoRuntimeError(
+      `Unexpected HostAddress ${JSON.stringify(hostAddress)}`,
+    );
   }
 }
 
@@ -337,14 +379,23 @@ function parseSslOptions(options: MakeConnectionOptions): TLSConnectionOpts {
   return result;
 }
 
-const SOCKET_ERROR_EVENT_LIST = ['error', 'close', 'timeout', 'parseError'] as const;
-type ErrorHandlerEventName = typeof SOCKET_ERROR_EVENT_LIST[number] | 'cancel';
+const SOCKET_ERROR_EVENT_LIST = [
+  "error",
+  "close",
+  "timeout",
+  "parseError",
+] as const;
+type ErrorHandlerEventName = typeof SOCKET_ERROR_EVENT_LIST[number] | "cancel";
 const SOCKET_ERROR_EVENTS = new Set(SOCKET_ERROR_EVENT_LIST);
 
-function makeConnection(options: MakeConnectionOptions, _callback: Callback<Stream>) {
+function makeConnection(
+  options: MakeConnectionOptions,
+  _callback: Callback<Stream>,
+) {
   const useTLS = options.tls ?? false;
   const keepAlive = options.keepAlive ?? true;
-  const socketTimeoutMS = options.socketTimeoutMS ?? Reflect.get(options, 'socketTimeout') ?? 0;
+  const socketTimeoutMS = options.socketTimeoutMS ??
+    Reflect.get(options, "socketTimeout") ?? 0;
   const noDelay = options.noDelay ?? true;
   const connectTimeoutMS = options.connectTimeoutMS ?? 30000;
   const rejectUnauthorized = options.rejectUnauthorized ?? true;
@@ -368,15 +419,15 @@ function makeConnection(options: MakeConnectionOptions, _callback: Callback<Stre
     return makeSocks5Connection(
       {
         ...options,
-        connectTimeoutMS // Should always be present for Socks5
+        connectTimeoutMS, // Should always be present for Socks5
       },
-      callback
+      callback,
     );
   }
 
   if (useTLS) {
     const tlsSocket = tls.connect(parseSslOptions(options));
-    if (typeof tlsSocket.disableRenegotiation === 'function') {
+    if (typeof tlsSocket.disableRenegotiation === "function") {
       tlsSocket.disableRenegotiation();
     }
     socket = tlsSocket;
@@ -393,13 +444,13 @@ function makeConnection(options: MakeConnectionOptions, _callback: Callback<Stre
   socket.setTimeout(connectTimeoutMS);
   socket.setNoDelay(noDelay);
 
-  const connectEvent = useTLS ? 'secureConnect' : 'connect';
+  const connectEvent = useTLS ? "secureConnect" : "connect";
   let cancellationHandler: (err: Error) => void;
   function errorHandler(eventName: ErrorHandlerEventName) {
     return (err: Error) => {
-      SOCKET_ERROR_EVENTS.forEach(event => socket.removeAllListeners(event));
+      SOCKET_ERROR_EVENTS.forEach((event) => socket.removeAllListeners(event));
       if (cancellationHandler && options.cancellationToken) {
-        options.cancellationToken.removeListener('cancel', cancellationHandler);
+        options.cancellationToken.removeListener("cancel", cancellationHandler);
       }
 
       socket.removeListener(connectEvent, connectHandler);
@@ -408,12 +459,12 @@ function makeConnection(options: MakeConnectionOptions, _callback: Callback<Stre
   }
 
   function connectHandler() {
-    SOCKET_ERROR_EVENTS.forEach(event => socket.removeAllListeners(event));
+    SOCKET_ERROR_EVENTS.forEach((event) => socket.removeAllListeners(event));
     if (cancellationHandler && options.cancellationToken) {
-      options.cancellationToken.removeListener('cancel', cancellationHandler);
+      options.cancellationToken.removeListener("cancel", cancellationHandler);
     }
 
-    if ('authorizationError' in socket) {
+    if ("authorizationError" in socket) {
       if (socket.authorizationError && rejectUnauthorized) {
         return callback(socket.authorizationError);
       }
@@ -423,10 +474,12 @@ function makeConnection(options: MakeConnectionOptions, _callback: Callback<Stre
     callback(undefined, socket);
   }
 
-  SOCKET_ERROR_EVENTS.forEach(event => socket.once(event, errorHandler(event)));
+  SOCKET_ERROR_EVENTS.forEach((event) =>
+    socket.once(event, errorHandler(event))
+  );
   if (options.cancellationToken) {
-    cancellationHandler = errorHandler('cancel');
-    options.cancellationToken.once('cancel', cancellationHandler);
+    cancellationHandler = errorHandler("cancel");
+    options.cancellationToken.once("cancel", cancellationHandler);
   }
 
   if (existingSocket) {
@@ -436,10 +489,13 @@ function makeConnection(options: MakeConnectionOptions, _callback: Callback<Stre
   }
 }
 
-function makeSocks5Connection(options: MakeConnectionOptions, callback: Callback<Stream>) {
+function makeSocks5Connection(
+  options: MakeConnectionOptions,
+  callback: Callback<Stream>,
+) {
   const hostAddress = HostAddress.fromHostPort(
-    options.proxyHost ?? '', // proxyHost is guaranteed to set here
-    options.proxyPort ?? 1080
+    options.proxyHost ?? "", // proxyHost is guaranteed to set here
+    options.proxyPort ?? 1080,
   );
 
   // First, connect to the proxy server itself:
@@ -448,7 +504,7 @@ function makeSocks5Connection(options: MakeConnectionOptions, callback: Callback
       ...options,
       hostAddress,
       tls: false,
-      proxyHost: undefined
+      proxyHost: undefined,
     },
     (err, rawSocket) => {
       if (err) {
@@ -456,9 +512,14 @@ function makeSocks5Connection(options: MakeConnectionOptions, callback: Callback
       }
 
       const destination = parseConnectOptions(options) as net.TcpNetConnectOpts;
-      if (typeof destination.host !== 'string' || typeof destination.port !== 'number') {
+      if (
+        typeof destination.host !== "string" ||
+        typeof destination.port !== "number"
+      ) {
         return callback(
-          new MongoInvalidArgumentError('Can only make Socks5 connections to TCP hosts')
+          new MongoInvalidArgumentError(
+            "Can only make Socks5 connections to TCP hosts",
+          ),
         );
       }
 
@@ -467,23 +528,23 @@ function makeSocks5Connection(options: MakeConnectionOptions, callback: Callback
         {
           existing_socket: rawSocket,
           timeout: options.connectTimeoutMS,
-          command: 'connect',
+          command: "connect",
           destination: {
             host: destination.host,
-            port: destination.port
+            port: destination.port,
           },
           proxy: {
             // host and port are ignored because we pass existing_socket
-            host: 'iLoveJavaScript',
+            host: "iLoveJavaScript",
             port: 0,
             type: 5,
             userId: options.proxyUsername || undefined,
-            password: options.proxyPassword || undefined
-          }
+            password: options.proxyPassword || undefined,
+          },
         },
         (err: AnyError, info: { socket: Stream }) => {
           if (err) {
-            return callback(connectionFailureError('error', err));
+            return callback(connectionFailureError("error", err));
           }
 
           // Finally, now treat the resulting duplex stream as the
@@ -492,27 +553,27 @@ function makeSocks5Connection(options: MakeConnectionOptions, callback: Callback
             {
               ...options,
               existingSocket: info.socket,
-              proxyHost: undefined
+              proxyHost: undefined,
             },
-            callback
+            callback,
           );
-        }
+        },
       );
-    }
+    },
   );
 }
 
 function connectionFailureError(type: ErrorHandlerEventName, err: Error) {
   switch (type) {
-    case 'error':
+    case "error":
       return new MongoNetworkError(err);
-    case 'timeout':
-      return new MongoNetworkTimeoutError('connection timed out');
-    case 'close':
-      return new MongoNetworkError('connection closed');
-    case 'cancel':
-      return new MongoNetworkError('connection establishment was cancelled');
+    case "timeout":
+      return new MongoNetworkTimeoutError("connection timed out");
+    case "close":
+      return new MongoNetworkError("connection closed");
+    case "cancel":
+      return new MongoNetworkError("connection establishment was cancelled");
     default:
-      return new MongoNetworkError('unknown network error');
+      return new MongoNetworkError("unknown network error");
   }
 }

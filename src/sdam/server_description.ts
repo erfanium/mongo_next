@@ -1,14 +1,19 @@
-import { Document, Long, ObjectId } from '../bson.ts';
-import type { MongoError } from '../error.ts';
-import { arrayStrictEqual, errorStrictEqual, HostAddress, now } from '../utils.ts';
-import type { ClusterTime } from './common.ts';
-import { ServerType } from './common.ts';
+import { Document, Long, ObjectId } from "../bson.ts";
+import type { MongoError } from "../error.ts";
+import {
+  arrayStrictEqual,
+  errorStrictEqual,
+  HostAddress,
+  now,
+} from "../utils.ts";
+import type { ClusterTime } from "./common.ts";
+import { ServerType } from "./common.ts";
 
 const WRITABLE_SERVER_TYPES = new Set<ServerType>([
   ServerType.RSPrimary,
   ServerType.Standalone,
   ServerType.Mongos,
-  ServerType.LoadBalancer
+  ServerType.LoadBalancer,
 ]);
 
 const DATA_BEARING_SERVER_TYPES = new Set<ServerType>([
@@ -16,7 +21,7 @@ const DATA_BEARING_SERVER_TYPES = new Set<ServerType>([
   ServerType.RSSecondary,
   ServerType.Mongos,
   ServerType.Standalone,
-  ServerType.LoadBalancer
+  ServerType.LoadBalancer,
 ]);
 
 /** @public */
@@ -83,8 +88,12 @@ export class ServerDescription {
    * @param address - The address of the server
    * @param hello - An optional hello response for this server
    */
-  constructor(address: HostAddress | string, hello?: Document, options?: ServerDescriptionOptions) {
-    if (typeof address === 'string') {
+  constructor(
+    address: HostAddress | string,
+    hello?: Document,
+    options?: ServerDescriptionOptions,
+  ) {
+    if (typeof address === "string") {
       this._hostAddress = new HostAddress(address);
       this.address = this._hostAddress.toString();
     } else {
@@ -93,8 +102,10 @@ export class ServerDescription {
     }
     this.type = parseServerType(hello, options);
     this.hosts = hello?.hosts?.map((host: string) => host.toLowerCase()) ?? [];
-    this.passives = hello?.passives?.map((host: string) => host.toLowerCase()) ?? [];
-    this.arbiters = hello?.arbiters?.map((host: string) => host.toLowerCase()) ?? [];
+    this.passives =
+      hello?.passives?.map((host: string) => host.toLowerCase()) ?? [];
+    this.arbiters =
+      hello?.arbiters?.map((host: string) => host.toLowerCase()) ?? [];
     this.tags = hello?.tags ?? {};
     this.minWireVersion = hello?.minWireVersion ?? 0;
     this.maxWireVersion = hello?.maxWireVersion ?? 0;
@@ -171,7 +182,7 @@ export class ServerDescription {
   }
 
   get port(): number {
-    const port = this.address.split(':').pop();
+    const port = this.address.split(":").pop();
     return port ? Number.parseInt(port, 10) : 27017;
   }
 
@@ -184,10 +195,9 @@ export class ServerDescription {
       this.topologyVersion === other.topologyVersion ||
       compareTopologyVersion(this.topologyVersion, other.topologyVersion) === 0;
 
-    const electionIdsEqual: boolean =
-      this.electionId && other.electionId
-        ? other.electionId && this.electionId.equals(other.electionId)
-        : this.electionId === other.electionId;
+    const electionIdsEqual: boolean = this.electionId && other.electionId
+      ? other.electionId && this.electionId.equals(other.electionId)
+      : this.electionId === other.electionId;
 
     return (
       other != null &&
@@ -200,14 +210,18 @@ export class ServerDescription {
       this.setVersion === other.setVersion &&
       electionIdsEqual &&
       this.primary === other.primary &&
-      this.logicalSessionTimeoutMinutes === other.logicalSessionTimeoutMinutes &&
+      this.logicalSessionTimeoutMinutes ===
+        other.logicalSessionTimeoutMinutes &&
       topologyVersionsEqual
     );
   }
 }
 
 // Parses a `hello` message and determines the server type
-export function parseServerType(hello?: Document, options?: ServerDescriptionOptions): ServerType {
+export function parseServerType(
+  hello?: Document,
+  options?: ServerDescriptionOptions,
+): ServerType {
   if (options?.loadBalanced) {
     return ServerType.LoadBalancer;
   }
@@ -220,7 +234,7 @@ export function parseServerType(hello?: Document, options?: ServerDescriptionOpt
     return ServerType.RSGhost;
   }
 
-  if (hello.msg && hello.msg === 'isdbgrid') {
+  if (hello.msg && hello.msg === "isdbgrid") {
     return ServerType.Mongos;
   }
 
@@ -256,15 +270,22 @@ function tagsStrictEqual(tags: TagSet, tags2: TagSet): boolean {
  *
  * @returns A negative number if `lhs` is older than `rhs`; positive if `lhs` is newer than `rhs`; 0 if they are equivalent.
  */
-export function compareTopologyVersion(lhs?: TopologyVersion, rhs?: TopologyVersion): number {
+export function compareTopologyVersion(
+  lhs?: TopologyVersion,
+  rhs?: TopologyVersion,
+): number {
   if (lhs == null || rhs == null) {
     return -1;
   }
 
   if (lhs.processId.equals(rhs.processId)) {
     // tests mock counter as just number, but in a real situation counter should always be a Long
-    const lhsCounter = Long.isLong(lhs.counter) ? lhs.counter : Long.fromNumber(lhs.counter);
-    const rhsCounter = Long.isLong(rhs.counter) ? lhs.counter : Long.fromNumber(rhs.counter);
+    const lhsCounter = Long.isLong(lhs.counter)
+      ? lhs.counter
+      : Long.fromNumber(lhs.counter);
+    const rhsCounter = Long.isLong(rhs.counter)
+      ? lhs.counter
+      : Long.fromNumber(rhs.counter);
     return lhsCounter.compare(rhsCounter);
   }
 

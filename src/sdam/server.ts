@@ -1,10 +1,16 @@
-import type { Document, Long } from '../bson.ts';
-import { CommandOptions, Connection, DestroyOptions, GetMoreOptions } from '../cmap/connection.ts';
+import { nextTick } from "../../deps.ts";
+import type { Document, Long } from "../bson.ts";
+import {
+  CommandOptions,
+  Connection,
+  DestroyOptions,
+  GetMoreOptions,
+} from "../cmap/connection.ts";
 import {
   ConnectionPool,
   ConnectionPoolEvents,
-  ConnectionPoolOptions
-} from '../cmap/connection_pool.ts';
+  ConnectionPoolOptions,
+} from "../cmap/connection_pool.ts";
 import {
   APM_EVENTS,
   CLOSED,
@@ -15,9 +21,9 @@ import {
   HEARTBEAT_EVENTS,
   SERVER_HEARTBEAT_FAILED,
   SERVER_HEARTBEAT_STARTED,
-  SERVER_HEARTBEAT_SUCCEEDED
-} from '../constants.ts';
-import type { AutoEncrypter } from '../deps.ts';
+  SERVER_HEARTBEAT_SUCCEEDED,
+} from "../constants.ts";
+import type { AutoEncrypter } from "../deps.ts";
 import {
   isNetworkErrorBeforeHandshake,
   isNodeShuttingDownError,
@@ -30,13 +36,13 @@ import {
   MongoNetworkTimeoutError,
   MongoServerClosedError,
   MongoUnexpectedServerResponseError,
-  needsRetryableWriteLabel
-} from '../error.ts';
-import { Logger } from '../logger.ts';
-import type { ServerApi } from '../mongo_client.ts';
-import { TypedEventEmitter } from '../mongo_types.ts';
-import type { ClientSession } from '../sessions.ts';
-import { isTransactionCommand } from '../transactions.ts';
+  needsRetryableWriteLabel,
+} from "../error.ts";
+import { Logger } from "../logger.ts";
+import type { ServerApi } from "../mongo_client.ts";
+import { TypedEventEmitter } from "../mongo_types.ts";
+import type { ClientSession } from "../sessions.ts";
+import { isTransactionCommand } from "../transactions.ts";
 import {
   Callback,
   collationNotSupported,
@@ -44,39 +50,47 @@ import {
   makeStateMachine,
   maxWireVersion,
   MongoDBNamespace,
-  supportsRetryableWrites
-} from '../utils.ts';
+  supportsRetryableWrites,
+} from "../utils.ts";
 import {
   ClusterTime,
   STATE_CLOSED,
   STATE_CLOSING,
   STATE_CONNECTED,
   STATE_CONNECTING,
-  TopologyType
-} from './common.ts';
+  TopologyType,
+} from "./common.ts";
 import type {
   ServerHeartbeatFailedEvent,
   ServerHeartbeatStartedEvent,
-  ServerHeartbeatSucceededEvent
-} from './events.ts';
-import { Monitor, MonitorOptions } from './monitor.ts';
-import { compareTopologyVersion, ServerDescription } from './server_description.ts';
-import type { Topology } from './topology.ts';
-import { nextTick } from 'next-tick';
+  ServerHeartbeatSucceededEvent,
+} from "./events.ts";
+import { Monitor, MonitorOptions } from "./monitor.ts";
+import {
+  compareTopologyVersion,
+  ServerDescription,
+} from "./server_description.ts";
+import type { Topology } from "./topology.ts";
 
 const stateTransition = makeStateMachine({
   [STATE_CLOSED]: [STATE_CLOSED, STATE_CONNECTING],
-  [STATE_CONNECTING]: [STATE_CONNECTING, STATE_CLOSING, STATE_CONNECTED, STATE_CLOSED],
+  [STATE_CONNECTING]: [
+    STATE_CONNECTING,
+    STATE_CLOSING,
+    STATE_CONNECTED,
+    STATE_CLOSED,
+  ],
   [STATE_CONNECTED]: [STATE_CONNECTED, STATE_CLOSING, STATE_CLOSED],
-  [STATE_CLOSING]: [STATE_CLOSING, STATE_CLOSED]
+  [STATE_CLOSING]: [STATE_CLOSING, STATE_CLOSED],
 });
 
 /** @internal */
-const kMonitor = Symbol('monitor');
+const kMonitor = Symbol("monitor");
 
 /** @public */
-export type ServerOptions = Omit<ConnectionPoolOptions, 'id' | 'generation' | 'hostAddress'> &
-  MonitorOptions;
+export type ServerOptions =
+  & Omit<ConnectionPoolOptions, "id" | "generation" | "hostAddress">
+  & MonitorOptions;
 
 /** @internal */
 export interface ServerPrivate {
@@ -99,17 +113,19 @@ export interface ServerPrivate {
 }
 
 /** @public */
-export type ServerEvents = {
-  serverHeartbeatStarted(event: ServerHeartbeatStartedEvent): void;
-  serverHeartbeatSucceeded(event: ServerHeartbeatSucceededEvent): void;
-  serverHeartbeatFailed(event: ServerHeartbeatFailedEvent): void;
-  /** Top level MongoClient doesn't emit this so it is marked: @internal */
-  connect(server: Server): void;
-  descriptionReceived(description: ServerDescription): void;
-  closed(): void;
-  ended(): void;
-} & ConnectionPoolEvents &
-  EventEmitterWithState;
+export type ServerEvents =
+  & {
+    serverHeartbeatStarted(event: ServerHeartbeatStartedEvent): void;
+    serverHeartbeatSucceeded(event: ServerHeartbeatSucceededEvent): void;
+    serverHeartbeatFailed(event: ServerHeartbeatFailedEvent): void;
+    /** Top level MongoClient doesn't emit this so it is marked: @internal */
+    connect(server: Server): void;
+    descriptionReceived(description: ServerDescription): void;
+    closed(): void;
+    ended(): void;
+  }
+  & ConnectionPoolEvents
+  & EventEmitterWithState;
 
 /** @internal */
 export class Server extends TypedEventEmitter<ServerEvents> {
@@ -137,7 +153,11 @@ export class Server extends TypedEventEmitter<ServerEvents> {
   /**
    * Create a server
    */
-  constructor(topology: Topology, description: ServerDescription, options: ServerOptions) {
+  constructor(
+    topology: Topology,
+    description: ServerDescription,
+    options: ServerOptions,
+  ) {
     super();
 
     this.serverApi = options.serverApi;
@@ -147,20 +167,23 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     this.s = {
       description,
       options,
-      logger: new Logger('Server'),
+      logger: new Logger("Server"),
       state: STATE_CLOSED,
       topology,
       pool: new ConnectionPool(poolOptions),
-      operationCount: 0
+      operationCount: 0,
     };
 
     for (const event of [...CMAP_EVENTS, ...APM_EVENTS]) {
       this.s.pool.on(event, (e: any) => this.emit(event, e));
     }
 
-    this.s.pool.on(Connection.CLUSTER_TIME_RECEIVED, (clusterTime: ClusterTime) => {
-      this.clusterTime = clusterTime;
-    });
+    this.s.pool.on(
+      Connection.CLUSTER_TIME_RECEIVED,
+      (clusterTime: ClusterTime) => {
+        this.clusterTime = clusterTime;
+      },
+    );
 
     if (this.loadBalanced) {
       this[kMonitor] = null;
@@ -177,24 +200,33 @@ export class Server extends TypedEventEmitter<ServerEvents> {
       monitor.on(event, (e: any) => this.emit(event, e));
     }
 
-    monitor.on('resetConnectionPool', () => {
+    monitor.on("resetConnectionPool", () => {
       this.s.pool.clear();
     });
 
-    monitor.on('resetServer', (error: MongoError) => markServerUnknown(this, error));
-    monitor.on(Server.SERVER_HEARTBEAT_SUCCEEDED, (event: ServerHeartbeatSucceededEvent) => {
-      this.emit(
-        Server.DESCRIPTION_RECEIVED,
-        new ServerDescription(this.description.hostAddress, event.reply, {
-          roundTripTime: calculateRoundTripTime(this.description.roundTripTime, event.duration)
-        })
-      );
+    monitor.on(
+      "resetServer",
+      (error: MongoError) => markServerUnknown(this, error),
+    );
+    monitor.on(
+      Server.SERVER_HEARTBEAT_SUCCEEDED,
+      (event: ServerHeartbeatSucceededEvent) => {
+        this.emit(
+          Server.DESCRIPTION_RECEIVED,
+          new ServerDescription(this.description.hostAddress, event.reply, {
+            roundTripTime: calculateRoundTripTime(
+              this.description.roundTripTime,
+              event.duration,
+            ),
+          }),
+        );
 
-      if (this.s.state === STATE_CONNECTING) {
-        stateTransition(this, STATE_CONNECTED);
-        this.emit(Server.CONNECT, this);
-      }
-    });
+        if (this.s.state === STATE_CONNECTING) {
+          stateTransition(this, STATE_CONNECTED);
+          this.emit(Server.CONNECT, this);
+        }
+      },
+    );
   }
 
   get clusterTime(): ClusterTime | undefined {
@@ -247,11 +279,11 @@ export class Server extends TypedEventEmitter<ServerEvents> {
 
   /** Destroy the server connection */
   destroy(options?: DestroyOptions, callback?: Callback): void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = Object.assign({}, { force: false }, options);
 
     if (this.s.state === STATE_CLOSED) {
-      if (typeof callback === 'function') {
+      if (typeof callback === "function") {
         callback();
       }
 
@@ -264,10 +296,10 @@ export class Server extends TypedEventEmitter<ServerEvents> {
       this[kMonitor]?.close();
     }
 
-    this.s.pool.close(options, err => {
+    this.s.pool.close(options, (err) => {
       stateTransition(this, STATE_CLOSED);
-      this.emit('closed');
-      if (typeof callback === 'function') {
+      this.emit("closed");
+      if (typeof callback === "function") {
         callback(err);
       }
     });
@@ -291,14 +323,14 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     ns: MongoDBNamespace,
     cmd: Document,
     options: CommandOptions,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     if (callback == null) {
-      throw new MongoInvalidArgumentError('Callback must be provided');
+      throw new MongoInvalidArgumentError("Callback must be provided");
     }
 
-    if (ns.db == null || typeof ns === 'string') {
-      throw new MongoInvalidArgumentError('Namespace must not be a string');
+    if (ns.db == null || typeof ns === "string") {
+      throw new MongoInvalidArgumentError("Namespace must not be a string");
     }
 
     if (this.s.state === STATE_CLOSING || this.s.state === STATE_CLOSED) {
@@ -307,7 +339,9 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     }
 
     // Clone the options
-    const finalOptions = Object.assign({}, options, { wireProtocolCommand: false });
+    const finalOptions = Object.assign({}, options, {
+      wireProtocolCommand: false,
+    });
 
     // There are cases where we need to flag the read preference not to get sent in
     // the command, such as pre-5.0 servers attempting to perform an aggregate write
@@ -319,7 +353,11 @@ export class Server extends TypedEventEmitter<ServerEvents> {
 
     // error if collation not supported
     if (collationNotSupported(this, cmd)) {
-      callback(new MongoCompatibilityError(`Server ${this.name} does not support collation`));
+      callback(
+        new MongoCompatibilityError(
+          `Server ${this.name} does not support collation`,
+        ),
+      );
       return;
     }
 
@@ -338,7 +376,10 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     //       require special logic to decrement it again, or would double increment (the load
     //       balanced code makes a recursive call).  Instead, we increment the count after this
     //       check.
-    if (this.loadBalanced && session && conn == null && isPinnableCommand(cmd, session)) {
+    if (
+      this.loadBalanced && session && conn == null &&
+      isPinnableCommand(cmd, session)
+    ) {
       this.s.pool.checkOut((err, checkedOut) => {
         if (err || checkedOut == null) {
           if (callback) return callback(err);
@@ -366,13 +407,19 @@ export class Server extends TypedEventEmitter<ServerEvents> {
           ns,
           cmd,
           finalOptions,
-          makeOperationHandler(this, conn, cmd, finalOptions, (error, response) => {
-            this.s.operationCount -= 1;
-            cb(error, response);
-          })
+          makeOperationHandler(
+            this,
+            conn,
+            cmd,
+            finalOptions,
+            (error, response) => {
+              this.s.operationCount -= 1;
+              cb(error, response);
+            },
+          ),
         );
       },
-      callback
+      callback,
     );
   }
 
@@ -384,7 +431,7 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     ns: MongoDBNamespace,
     cursorId: Long,
     options: GetMoreOptions,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     if (this.s.state === STATE_CLOSING || this.s.state === STATE_CLOSED) {
       callback(new MongoServerClosedError());
@@ -409,10 +456,10 @@ export class Server extends TypedEventEmitter<ServerEvents> {
           makeOperationHandler(this, conn, {}, options, (error, response) => {
             this.s.operationCount -= 1;
             cb(error, response);
-          })
+          }),
         );
       },
-      callback
+      callback,
     );
   }
 
@@ -424,10 +471,10 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     ns: MongoDBNamespace,
     cursorIds: Long[],
     options: CommandOptions,
-    callback?: Callback
+    callback?: Callback,
   ): void {
     if (this.s.state === STATE_CLOSING || this.s.state === STATE_CLOSED) {
-      if (typeof callback === 'function') {
+      if (typeof callback === "function") {
         callback(new MongoServerClosedError());
       }
 
@@ -451,10 +498,10 @@ export class Server extends TypedEventEmitter<ServerEvents> {
           makeOperationHandler(this, conn, {}, undefined, (error, response) => {
             this.s.operationCount -= 1;
             cb(error, response);
-          })
+          }),
         );
       },
-      callback
+      callback,
     );
   }
 }
@@ -474,7 +521,10 @@ function markServerUnknown(server: Server, error?: MongoError) {
     return;
   }
 
-  if (error instanceof MongoNetworkError && !(error instanceof MongoNetworkTimeoutError)) {
+  if (
+    error instanceof MongoNetworkError &&
+    !(error instanceof MongoNetworkTimeoutError)
+  ) {
     server[kMonitor]?.reset();
   }
 
@@ -482,9 +532,10 @@ function markServerUnknown(server: Server, error?: MongoError) {
     Server.DESCRIPTION_RECEIVED,
     new ServerDescription(server.description.hostAddress, undefined, {
       error,
-      topologyVersion:
-        error && error.topologyVersion ? error.topologyVersion : server.description.topologyVersion
-    })
+      topologyVersion: error && error.topologyVersion
+        ? error.topologyVersion
+        : server.description.topologyVersion,
+    }),
   );
 }
 
@@ -492,11 +543,11 @@ function isPinnableCommand(cmd: Document, session?: ClientSession): boolean {
   if (session) {
     return (
       session.inTransaction() ||
-      'aggregate' in cmd ||
-      'find' in cmd ||
-      'getMore' in cmd ||
-      'listCollections' in cmd ||
-      'listIndexes' in cmd
+      "aggregate" in cmd ||
+      "find" in cmd ||
+      "getMore" in cmd ||
+      "listCollections" in cmd ||
+      "listIndexes" in cmd
     );
   }
 
@@ -506,7 +557,8 @@ function isPinnableCommand(cmd: Document, session?: ClientSession): boolean {
 function connectionIsStale(pool: ConnectionPool, connection: Connection) {
   if (connection.serviceId) {
     return (
-      connection.generation !== pool.serviceGenerations.get(connection.serviceId.toHexString())
+      connection.generation !==
+        pool.serviceGenerations.get(connection.serviceId.toHexString())
     );
   }
 
@@ -519,7 +571,10 @@ function shouldHandleStateChangeError(server: Server, err: MongoError) {
   return compareTopologyVersion(stv, etv) < 0;
 }
 
-function inActiveTransaction(session: ClientSession | undefined, cmd: Document) {
+function inActiveTransaction(
+  session: ClientSession | undefined,
+  cmd: Document,
+) {
   return session && session.inTransaction() && !isTransactionCommand(cmd);
 }
 
@@ -534,7 +589,7 @@ function makeOperationHandler(
   connection: Connection,
   cmd: Document,
   options: CommandOptions | GetMoreOptions | undefined,
-  callback: Callback
+  callback: Callback,
 ): Callback {
   const session = options?.session;
   return function handleOperationResult(error, result) {
@@ -543,7 +598,9 @@ function makeOperationHandler(
     }
 
     if (!error) {
-      return callback(new MongoUnexpectedServerResponseError('Empty response with no error'));
+      return callback(
+        new MongoUnexpectedServerResponseError("Empty response with no error"),
+      );
     }
 
     if (!(error instanceof MongoError)) {
@@ -569,14 +626,18 @@ function makeOperationHandler(
       }
 
       if (
-        (isRetryableWritesEnabled(server.s.topology) || isTransactionCommand(cmd)) &&
+        (isRetryableWritesEnabled(server.s.topology) ||
+          isTransactionCommand(cmd)) &&
         supportsRetryableWrites(server) &&
         !inActiveTransaction(session, cmd)
       ) {
         error.addErrorLabel(MongoErrorLabel.RetryableWriteError);
       }
 
-      if (!(error instanceof MongoNetworkTimeoutError) || isNetworkErrorBeforeHandshake(error)) {
+      if (
+        !(error instanceof MongoNetworkTimeoutError) ||
+        isNetworkErrorBeforeHandshake(error)
+      ) {
         // In load balanced mode we never mark the server as unknown and always
         // clear for the specific service id.
 
@@ -587,7 +648,8 @@ function makeOperationHandler(
       }
     } else {
       if (
-        (isRetryableWritesEnabled(server.s.topology) || isTransactionCommand(cmd)) &&
+        (isRetryableWritesEnabled(server.s.topology) ||
+          isTransactionCommand(cmd)) &&
         needsRetryableWriteLabel(error, maxWireVersion(server)) &&
         !inActiveTransaction(session, cmd)
       ) {

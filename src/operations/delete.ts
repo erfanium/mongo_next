@@ -1,15 +1,25 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoCompatibilityError, MongoServerError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, collationNotSupported, maxWireVersion, MongoDBNamespace } from '../utils.ts';
-import type { WriteConcernOptions } from '../write_concern.ts';
-import { CollationOptions, CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects, Hint } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import { MongoCompatibilityError, MongoServerError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import {
+  Callback,
+  collationNotSupported,
+  maxWireVersion,
+  MongoDBNamespace,
+} from "../utils.ts";
+import type { WriteConcernOptions } from "../write_concern.ts";
+import {
+  CollationOptions,
+  CommandOperation,
+  CommandOperationOptions,
+} from "./command.ts";
+import { Aspect, defineAspects, Hint } from "./operation.ts";
 
 /** @public */
-export interface DeleteOptions extends CommandOperationOptions, WriteConcernOptions {
+export interface DeleteOptions
+  extends CommandOperationOptions, WriteConcernOptions {
   /** If true, when an insert fails, don't execute the remaining writes. If false, continue with remaining inserts when one fails. */
   ordered?: boolean;
   /** Specifies the collation to use for the operation */
@@ -48,7 +58,11 @@ export class DeleteOperation extends CommandOperation<Document> {
   override options: DeleteOptions;
   statements: DeleteStatement[];
 
-  constructor(ns: MongoDBNamespace, statements: DeleteStatement[], options: DeleteOptions) {
+  constructor(
+    ns: MongoDBNamespace,
+    statements: DeleteStatement[],
+    options: DeleteOptions,
+  ) {
     super(undefined, options);
     this.options = options;
     this.ns = ns;
@@ -60,16 +74,24 @@ export class DeleteOperation extends CommandOperation<Document> {
       return false;
     }
 
-    return this.statements.every(op => (op.limit != null ? op.limit > 0 : true));
+    return this.statements.every(
+      (op) => (op.limit != null ? op.limit > 0 : true),
+    );
   }
 
-  override execute(server: Server, session: ClientSession | undefined, callback: Callback): void {
+  override execute(
+    server: Server,
+    session: ClientSession | undefined,
+    callback: Callback,
+  ): void {
     const options = this.options ?? {};
-    const ordered = typeof options.ordered === 'boolean' ? options.ordered : true;
+    const ordered = typeof options.ordered === "boolean"
+      ? options.ordered
+      : true;
     const command: Document = {
       delete: this.ns.collection,
       deletes: this.statements,
-      ordered
+      ordered,
     };
 
     if (options.let) {
@@ -85,22 +107,37 @@ export class DeleteOperation extends CommandOperation<Document> {
     if (options.explain != null && maxWireVersion(server) < 3) {
       return callback
         ? callback(
-            new MongoCompatibilityError(`Server ${server.name} does not support explain on delete`)
-          )
+          new MongoCompatibilityError(
+            `Server ${server.name} does not support explain on delete`,
+          ),
+        )
         : undefined;
     }
 
     const unacknowledgedWrite = this.writeConcern && this.writeConcern.w === 0;
     if (unacknowledgedWrite || maxWireVersion(server) < 5) {
       if (this.statements.find((o: Document) => o.hint)) {
-        callback(new MongoCompatibilityError(`Servers < 3.4 do not support hint on delete`));
+        callback(
+          new MongoCompatibilityError(
+            `Servers < 3.4 do not support hint on delete`,
+          ),
+        );
         return;
       }
     }
 
-    const statementWithCollation = this.statements.find(statement => !!statement.collation);
-    if (statementWithCollation && collationNotSupported(server, statementWithCollation)) {
-      callback(new MongoCompatibilityError(`Server ${server.name} does not support collation`));
+    const statementWithCollation = this.statements.find((statement) =>
+      !!statement.collation
+    );
+    if (
+      statementWithCollation &&
+      collationNotSupported(server, statementWithCollation)
+    ) {
+      callback(
+        new MongoCompatibilityError(
+          `Server ${server.name} does not support collation`,
+        ),
+      );
       return;
     }
 
@@ -109,48 +146,66 @@ export class DeleteOperation extends CommandOperation<Document> {
 }
 
 export class DeleteOneOperation extends DeleteOperation {
-  constructor(collection: Collection, filter: Document, options: DeleteOptions) {
-    super(collection.s.namespace, [makeDeleteStatement(filter, { ...options, limit: 1 })], options);
+  constructor(
+    collection: Collection,
+    filter: Document,
+    options: DeleteOptions,
+  ) {
+    super(collection.s.namespace, [
+      makeDeleteStatement(filter, { ...options, limit: 1 }),
+    ], options);
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<DeleteResult>
+    callback: Callback<DeleteResult>,
   ): void {
     super.execute(server, session, (err, res) => {
       if (err || res == null) return callback(err);
       if (res.code) return callback(new MongoServerError(res));
-      if (res.writeErrors) return callback(new MongoServerError(res.writeErrors[0]));
+      if (res.writeErrors) {
+        return callback(new MongoServerError(res.writeErrors[0]));
+      }
       if (this.explain) return callback(undefined, res);
 
       callback(undefined, {
         acknowledged: this.writeConcern?.w !== 0 ?? true,
-        deletedCount: res.n
+        deletedCount: res.n,
       });
     });
   }
 }
 
 export class DeleteManyOperation extends DeleteOperation {
-  constructor(collection: Collection, filter: Document, options: DeleteOptions) {
-    super(collection.s.namespace, [makeDeleteStatement(filter, options)], options);
+  constructor(
+    collection: Collection,
+    filter: Document,
+    options: DeleteOptions,
+  ) {
+    super(
+      collection.s.namespace,
+      [makeDeleteStatement(filter, options)],
+      options,
+    );
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<DeleteResult>
+    callback: Callback<DeleteResult>,
   ): void {
     super.execute(server, session, (err, res) => {
       if (err || res == null) return callback(err);
       if (res.code) return callback(new MongoServerError(res));
-      if (res.writeErrors) return callback(new MongoServerError(res.writeErrors[0]));
+      if (res.writeErrors) {
+        return callback(new MongoServerError(res.writeErrors[0]));
+      }
       if (this.explain) return callback(undefined, res);
 
       callback(undefined, {
         acknowledged: this.writeConcern?.w !== 0 ?? true,
-        deletedCount: res.n
+        deletedCount: res.n,
       });
     });
   }
@@ -158,11 +213,11 @@ export class DeleteManyOperation extends DeleteOperation {
 
 export function makeDeleteStatement(
   filter: Document,
-  options: DeleteOptions & { limit?: number }
+  options: DeleteOptions & { limit?: number },
 ): DeleteStatement {
   const op: DeleteStatement = {
     q: filter,
-    limit: typeof options.limit === 'number' ? options.limit : 0
+    limit: typeof options.limit === "number" ? options.limit : 0,
   };
 
   if (options.single === true) {
@@ -185,10 +240,10 @@ defineAspects(DeleteOneOperation, [
   Aspect.RETRYABLE,
   Aspect.WRITE_OPERATION,
   Aspect.EXPLAINABLE,
-  Aspect.SKIP_COLLATION
+  Aspect.SKIP_COLLATION,
 ]);
 defineAspects(DeleteManyOperation, [
   Aspect.WRITE_OPERATION,
   Aspect.EXPLAINABLE,
-  Aspect.SKIP_COLLATION
+  Aspect.SKIP_COLLATION,
 ]);

@@ -1,8 +1,16 @@
-import type { Document, ObjectId } from '../bson.ts';
-import { LEGACY_HELLO_COMMAND, LEGACY_HELLO_COMMAND_CAMEL_CASE } from '../constants.ts';
-import { calculateDurationInMs, deepCopy } from '../utils.ts';
-import { GetMore, KillCursor, Msg, WriteProtocolMessageType } from './commands.ts';
-import type { Connection } from './connection.ts';
+import type { Document, ObjectId } from "../bson.ts";
+import {
+  LEGACY_HELLO_COMMAND,
+  LEGACY_HELLO_COMMAND_CAMEL_CASE,
+} from "../constants.ts";
+import { calculateDurationInMs, deepCopy } from "../utils.ts";
+import {
+  GetMore,
+  KillCursor,
+  Msg,
+  WriteProtocolMessageType,
+} from "./commands.ts";
+import type { Connection } from "./connection.ts";
 
 /**
  * An event indicating the start of a given
@@ -29,7 +37,9 @@ export class CommandStartedEvent {
   constructor(connection: Connection, command: WriteProtocolMessageType) {
     const cmd = extractCommand(command);
     const commandName = extractCommandName(cmd);
-    const { address, connectionId, serviceId } = extractConnectionDetails(connection);
+    const { address, connectionId, serviceId } = extractConnectionDetails(
+      connection,
+    );
 
     // TODO: remove in major revision, this is not spec behavior
     if (SENSITIVE_COMMANDS.has(commandName)) {
@@ -79,11 +89,13 @@ export class CommandSucceededEvent {
     connection: Connection,
     command: WriteProtocolMessageType,
     reply: Document | undefined,
-    started: number
+    started: number,
   ) {
     const cmd = extractCommand(command);
     const commandName = extractCommandName(cmd);
-    const { address, connectionId, serviceId } = extractConnectionDetails(connection);
+    const { address, connectionId, serviceId } = extractConnectionDetails(
+      connection,
+    );
 
     this.address = address;
     this.connectionId = connectionId;
@@ -127,11 +139,13 @@ export class CommandFailedEvent {
     connection: Connection,
     command: WriteProtocolMessageType,
     error: Error | Document,
-    started: number
+    started: number,
   ) {
     const cmd = extractCommand(command);
     const commandName = extractCommandName(cmd);
-    const { address, connectionId, serviceId } = extractConnectionDetails(connection);
+    const { address, connectionId, serviceId } = extractConnectionDetails(
+      connection,
+    );
 
     this.address = address;
     this.connectionId = connectionId;
@@ -151,57 +165,67 @@ export class CommandFailedEvent {
 
 /** Commands that we want to redact because of the sensitive nature of their contents */
 const SENSITIVE_COMMANDS = new Set([
-  'authenticate',
-  'saslStart',
-  'saslContinue',
-  'getnonce',
-  'createUser',
-  'updateUser',
-  'copydbgetnonce',
-  'copydbsaslstart',
-  'copydb'
+  "authenticate",
+  "saslStart",
+  "saslContinue",
+  "getnonce",
+  "createUser",
+  "updateUser",
+  "copydbgetnonce",
+  "copydbsaslstart",
+  "copydb",
 ]);
 
-const HELLO_COMMANDS = new Set(['hello', LEGACY_HELLO_COMMAND, LEGACY_HELLO_COMMAND_CAMEL_CASE]);
+const HELLO_COMMANDS = new Set([
+  "hello",
+  LEGACY_HELLO_COMMAND,
+  LEGACY_HELLO_COMMAND_CAMEL_CASE,
+]);
 
 // helper methods
 const extractCommandName = (commandDoc: Document) => Object.keys(commandDoc)[0];
 const namespace = (command: WriteProtocolMessageType) => command.ns;
-const databaseName = (command: WriteProtocolMessageType) => command.ns.split('.')[0];
-const collectionName = (command: WriteProtocolMessageType) => command.ns.split('.')[1];
-const maybeRedact = (commandName: string, commandDoc: Document, result: Error | Document) =>
+const databaseName = (command: WriteProtocolMessageType) =>
+  command.ns.split(".")[0];
+const collectionName = (command: WriteProtocolMessageType) =>
+  command.ns.split(".")[1];
+const maybeRedact = (
+  commandName: string,
+  commandDoc: Document,
+  result: Error | Document,
+) =>
   SENSITIVE_COMMANDS.has(commandName) ||
-  (HELLO_COMMANDS.has(commandName) && commandDoc.speculativeAuthenticate)
+    (HELLO_COMMANDS.has(commandName) && commandDoc.speculativeAuthenticate)
     ? {}
     : result;
 
 const LEGACY_FIND_QUERY_MAP: { [key: string]: string } = {
-  $query: 'filter',
-  $orderby: 'sort',
-  $hint: 'hint',
-  $comment: 'comment',
-  $maxScan: 'maxScan',
-  $max: 'max',
-  $min: 'min',
-  $returnKey: 'returnKey',
-  $showDiskLoc: 'showRecordId',
-  $maxTimeMS: 'maxTimeMS',
-  $snapshot: 'snapshot'
+  $query: "filter",
+  $orderby: "sort",
+  $hint: "hint",
+  $comment: "comment",
+  $maxScan: "maxScan",
+  $max: "max",
+  $min: "min",
+  $returnKey: "returnKey",
+  $showDiskLoc: "showRecordId",
+  $maxTimeMS: "maxTimeMS",
+  $snapshot: "snapshot",
 };
 
 const LEGACY_FIND_OPTIONS_MAP = {
-  numberToSkip: 'skip',
-  numberToReturn: 'batchSize',
-  returnFieldSelector: 'projection'
+  numberToSkip: "skip",
+  numberToReturn: "batchSize",
+  returnFieldSelector: "projection",
 } as const;
 
 const OP_QUERY_KEYS = [
-  'tailable',
-  'oplogReplay',
-  'noCursorTimeout',
-  'awaitData',
-  'partial',
-  'exhaust'
+  "tailable",
+  "oplogReplay",
+  "noCursorTimeout",
+  "awaitData",
+  "partial",
+  "exhaust",
 ] as const;
 
 /** Extract the actual command from the query, possibly up-converting if it's a legacy format */
@@ -210,14 +234,14 @@ function extractCommand(command: WriteProtocolMessageType): Document {
     return {
       getMore: deepCopy(command.cursorId),
       collection: collectionName(command),
-      batchSize: command.numberToReturn
+      batchSize: command.numberToReturn,
     };
   }
 
   if (command instanceof KillCursor) {
     return {
       killCursors: collectionName(command),
-      cursors: deepCopy(command.cursorIds)
+      cursors: deepCopy(command.cursorIds),
     };
   }
 
@@ -227,27 +251,29 @@ function extractCommand(command: WriteProtocolMessageType): Document {
 
   if (command.query?.$query) {
     let result: Document;
-    if (command.ns === 'admin.$cmd') {
+    if (command.ns === "admin.$cmd") {
       // up-convert legacy command
       result = Object.assign({}, command.query.$query);
     } else {
       // up-convert legacy find command
       result = { find: collectionName(command) };
-      Object.keys(LEGACY_FIND_QUERY_MAP).forEach(key => {
+      Object.keys(LEGACY_FIND_QUERY_MAP).forEach((key) => {
         if (command.query[key] != null) {
           result[LEGACY_FIND_QUERY_MAP[key]] = deepCopy(command.query[key]);
         }
       });
     }
 
-    Object.keys(LEGACY_FIND_OPTIONS_MAP).forEach(key => {
+    Object.keys(LEGACY_FIND_OPTIONS_MAP).forEach((key) => {
       const legacyKey = key as keyof typeof LEGACY_FIND_OPTIONS_MAP;
       if (command[legacyKey] != null) {
-        result[LEGACY_FIND_OPTIONS_MAP[legacyKey]] = deepCopy(command[legacyKey]);
+        result[LEGACY_FIND_OPTIONS_MAP[legacyKey]] = deepCopy(
+          command[legacyKey],
+        );
       }
     });
 
-    OP_QUERY_KEYS.forEach(key => {
+    OP_QUERY_KEYS.forEach((key) => {
       const opKey = key as typeof OP_QUERY_KEYS[number];
       if (command[opKey]) {
         result[opKey] = command[opKey];
@@ -274,8 +300,10 @@ function extractCommand(command: WriteProtocolMessageType): Document {
   }
 
   for (const k in command) {
-    if (k === 'query') continue;
-    clonedCommand[k] = deepCopy((command as unknown as Record<string, unknown>)[k]);
+    if (k === "query") continue;
+    clonedCommand[k] = deepCopy(
+      (command as unknown as Record<string, unknown>)[k],
+    );
   }
   return command.query ? clonedQuery : clonedCommand;
 }
@@ -284,7 +312,7 @@ function extractReply(command: WriteProtocolMessageType, reply?: Document) {
   if (command instanceof KillCursor) {
     return {
       ok: 1,
-      cursorsUnknown: command.cursorIds
+      cursorsUnknown: command.cursorIds,
     };
   }
 
@@ -298,8 +326,8 @@ function extractReply(command: WriteProtocolMessageType, reply?: Document) {
       cursor: {
         id: deepCopy(reply.cursorId),
         ns: namespace(command),
-        nextBatch: deepCopy(reply.documents)
-      }
+        nextBatch: deepCopy(reply.documents),
+      },
     };
   }
 
@@ -314,8 +342,8 @@ function extractReply(command: WriteProtocolMessageType, reply?: Document) {
       cursor: {
         id: deepCopy(reply.cursorId),
         ns: namespace(command),
-        firstBatch: deepCopy(reply.documents)
-      }
+        firstBatch: deepCopy(reply.documents),
+      },
     };
   }
 
@@ -324,12 +352,12 @@ function extractReply(command: WriteProtocolMessageType, reply?: Document) {
 
 function extractConnectionDetails(connection: Connection) {
   let connectionId;
-  if ('id' in connection) {
+  if ("id" in connection) {
     connectionId = connection.id;
   }
   return {
     address: connection.address,
     serviceId: connection.serviceId,
-    connectionId
+    connectionId,
   };
 }

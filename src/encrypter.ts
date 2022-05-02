@@ -1,15 +1,18 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { deserialize, serialize } from './bson.ts';
-import { MONGO_CLIENT_EVENTS } from './constants.ts';
-import type { AutoEncrypter, AutoEncryptionOptions } from './deps.ts';
-import { MongoInvalidArgumentError, MongoMissingDependencyError } from './error.ts';
-import { MongoClient, MongoClientOptions } from './mongo_client.ts';
-import type { Callback } from './utils.ts';
+import { deserialize, serialize } from "./bson.ts";
+import { MONGO_CLIENT_EVENTS } from "./constants.ts";
+import type { AutoEncrypter, AutoEncryptionOptions } from "./deps.ts";
+import {
+  MongoInvalidArgumentError,
+  MongoMissingDependencyError,
+} from "./error.ts";
+import { MongoClient, MongoClientOptions } from "./mongo_client.ts";
+import type { Callback } from "./utils.ts";
 
 let AutoEncrypterClass: AutoEncrypter;
 
 /** @internal */
-const kInternalClient = Symbol('internalClient');
+const kInternalClient = Symbol("internalClient");
 
 /** @internal */
 export interface EncrypterOptions {
@@ -25,8 +28,10 @@ export class Encrypter {
   autoEncrypter: AutoEncrypter;
 
   constructor(client: MongoClient, uri: string, options: MongoClientOptions) {
-    if (typeof options.autoEncryption !== 'object') {
-      throw new MongoInvalidArgumentError('Option "autoEncryption" must be specified');
+    if (typeof options.autoEncryption !== "object") {
+      throw new MongoInvalidArgumentError(
+        'Option "autoEncryption" must be specified',
+      );
     }
     // initialize to null, if we call getInternalClient, we may set this it is important to not overwrite those function calls.
     this[kInternalClient] = null;
@@ -34,10 +39,16 @@ export class Encrypter {
     this.bypassAutoEncryption = !!options.autoEncryption.bypassAutoEncryption;
     this.needsConnecting = false;
 
-    if (options.maxPoolSize === 0 && options.autoEncryption.keyVaultClient == null) {
+    if (
+      options.maxPoolSize === 0 && options.autoEncryption.keyVaultClient == null
+    ) {
       options.autoEncryption.keyVaultClient = client;
     } else if (options.autoEncryption.keyVaultClient == null) {
-      options.autoEncryption.keyVaultClient = this.getInternalClient(client, uri, options);
+      options.autoEncryption.keyVaultClient = this.getInternalClient(
+        client,
+        uri,
+        options,
+      );
     }
 
     if (this.bypassAutoEncryption) {
@@ -45,7 +56,11 @@ export class Encrypter {
     } else if (options.maxPoolSize === 0) {
       options.autoEncryption.metadataClient = client;
     } else {
-      options.autoEncryption.metadataClient = this.getInternalClient(client, uri, options);
+      options.autoEncryption.metadataClient = this.getInternalClient(
+        client,
+        uri,
+        options,
+      );
     }
 
     if (options.proxyHost) {
@@ -53,7 +68,7 @@ export class Encrypter {
         proxyHost: options.proxyHost,
         proxyPort: options.proxyPort,
         proxyUsername: options.proxyUsername,
-        proxyPassword: options.proxyPassword
+        proxyPassword: options.proxyPassword,
       };
     }
 
@@ -66,15 +81,28 @@ export class Encrypter {
     this.autoEncrypter = new AutoEncrypterClass(client, options.autoEncryption);
   }
 
-  getInternalClient(client: MongoClient, uri: string, options: MongoClientOptions): MongoClient {
+  getInternalClient(
+    client: MongoClient,
+    uri: string,
+    options: MongoClientOptions,
+  ): MongoClient {
     // TODO(NODE-4144): Remove new variable for type narrowing
     let internalClient = this[kInternalClient];
     if (internalClient == null) {
       const clonedOptions: MongoClientOptions = {};
 
       for (const key of Object.keys(options)) {
-        if (['autoEncryption', 'minPoolSize', 'servers', 'caseTranslate', 'dbName'].includes(key))
+        if (
+          [
+            "autoEncryption",
+            "minPoolSize",
+            "servers",
+            "caseTranslate",
+            "dbName",
+          ].includes(key)
+        ) {
           continue;
+        }
         Reflect.set(clonedOptions, key, Reflect.get(options, key));
       }
 
@@ -89,7 +117,7 @@ export class Encrypter {
         }
       }
 
-      client.on('newListener', (eventName, listener) => {
+      client.on("newListener", (eventName, listener) => {
         internalClient?.on(eventName, listener);
       });
 
@@ -110,7 +138,7 @@ export class Encrypter {
   }
 
   close(client: MongoClient, force: boolean, callback: Callback): void {
-    this.autoEncrypter.teardown(!!force, e => {
+    this.autoEncrypter.teardown(!!force, (e) => {
       const internalClient = this[kInternalClient];
       if (internalClient != null && client !== internalClient) {
         return internalClient.close(force, callback);
@@ -120,17 +148,21 @@ export class Encrypter {
   }
 
   static checkForMongoCrypt(): void {
-    let mongodbClientEncryption = undefined;
-    try {
-      // Ensure you always wrap an optional require in the try block NODE-3199
-      mongodbClientEncryption = require('mongodb-client-encryption');
-    } catch (err) {
-      throw new MongoMissingDependencyError(
-        'Auto-encryption requested, but the module is not installed. ' +
-          'Please add `mongodb-client-encryption` as a dependency of your project'
-      );
-    }
+    throw new Error("MongoCrypt is not supported");
 
-    AutoEncrypterClass = mongodbClientEncryption.extension(require('../lib/index')).AutoEncrypter;
+
+    // let mongodbClientEncryption = undefined;
+    // try {
+    //   // Ensure you always wrap an optional require in the try block NODE-3199
+    //   mongodbClientEncryption = require("mongodb-client-encryption");
+    // } catch (err) {
+    //   throw new MongoMissingDependencyError(
+    //     "Auto-encryption requested, but the module is not installed. " +
+    //       "Please add `mongodb-client-encryption` as a dependency of your project",
+    //   );
+    // }
+
+    // AutoEncrypterClass =
+    //   mongodbClientEncryption.extension(require("../lib/index")).AutoEncrypter;
   }
 }

@@ -1,9 +1,9 @@
 // Resolves the default auth mechanism according to
-import type { Document } from '../../bson.ts';
-import { MongoAPIError, MongoMissingCredentialsError } from '../../error.ts';
-import { emitWarningOnce } from '../../utils.ts';
-import { GSSAPICanonicalizationValue } from './gssapi.ts';
-import { AUTH_MECHS_AUTH_SRC_EXTERNAL, AuthMechanism } from './providers.ts';
+import type { Document } from "../../bson.ts";
+import { MongoAPIError, MongoMissingCredentialsError } from "../../error.ts";
+import { emitWarningOnce } from "../../utils.ts";
+import { GSSAPICanonicalizationValue } from "./gssapi.ts";
+import { AUTH_MECHS_AUTH_SRC_EXTERNAL, AuthMechanism } from "./providers.ts";
 
 // https://github.com/mongodb/specifications/blob/master/source/auth/auth.rst
 function getDefaultAuthMechanism(hello?: Document): AuthMechanism {
@@ -11,7 +11,9 @@ function getDefaultAuthMechanism(hello?: Document): AuthMechanism {
     // If hello contains saslSupportedMechs, use scram-sha-256
     // if it is available, else scram-sha-1
     if (Array.isArray(hello.saslSupportedMechs)) {
-      return hello.saslSupportedMechs.includes(AuthMechanism.MONGODB_SCRAM_SHA256)
+      return hello.saslSupportedMechs.includes(
+          AuthMechanism.MONGODB_SCRAM_SHA256,
+        )
         ? AuthMechanism.MONGODB_SCRAM_SHA256
         : AuthMechanism.MONGODB_SCRAM_SHA1;
     }
@@ -86,14 +88,14 @@ export class MongoCredentials {
       ) {
         this.mechanismProperties = {
           ...this.mechanismProperties,
-          AWS_SESSION_TOKEN: process.env.AWS_SESSION_TOKEN
+          AWS_SESSION_TOKEN: process.env.AWS_SESSION_TOKEN,
         };
       }
     }
 
-    if ('gssapiCanonicalizeHostName' in this.mechanismProperties) {
+    if ("gssapiCanonicalizeHostName" in this.mechanismProperties) {
       emitWarningOnce(
-        'gssapiCanonicalizeHostName is deprecated. Please use CANONICALIZE_HOST_NAME instead.'
+        "gssapiCanonicalizeHostName is deprecated. Please use CANONICALIZE_HOST_NAME instead.",
       );
       this.mechanismProperties.CANONICALIZE_HOST_NAME =
         this.mechanismProperties.gssapiCanonicalizeHostName;
@@ -127,7 +129,7 @@ export class MongoCredentials {
         password: this.password,
         source: this.source,
         mechanism: getDefaultAuthMechanism(hello),
-        mechanismProperties: this.mechanismProperties
+        mechanismProperties: this.mechanismProperties,
       });
     }
 
@@ -143,48 +145,63 @@ export class MongoCredentials {
         this.mechanism === AuthMechanism.MONGODB_SCRAM_SHA256) &&
       !this.username
     ) {
-      throw new MongoMissingCredentialsError(`Username required for mechanism '${this.mechanism}'`);
+      throw new MongoMissingCredentialsError(
+        `Username required for mechanism '${this.mechanism}'`,
+      );
     }
 
     if (AUTH_MECHS_AUTH_SRC_EXTERNAL.has(this.mechanism)) {
-      if (this.source != null && this.source !== '$external') {
+      if (this.source != null && this.source !== "$external") {
         // TODO(NODE-3485): Replace this with a MongoAuthValidationError
         throw new MongoAPIError(
-          `Invalid source '${this.source}' for mechanism '${this.mechanism}' specified.`
+          `Invalid source '${this.source}' for mechanism '${this.mechanism}' specified.`,
         );
       }
     }
 
     if (this.mechanism === AuthMechanism.MONGODB_PLAIN && this.source == null) {
       // TODO(NODE-3485): Replace this with a MongoAuthValidationError
-      throw new MongoAPIError('PLAIN Authentication Mechanism needs an auth source');
+      throw new MongoAPIError(
+        "PLAIN Authentication Mechanism needs an auth source",
+      );
     }
 
-    if (this.mechanism === AuthMechanism.MONGODB_X509 && this.password != null) {
-      if (this.password === '') {
-        Reflect.set(this, 'password', undefined);
+    if (
+      this.mechanism === AuthMechanism.MONGODB_X509 && this.password != null
+    ) {
+      if (this.password === "") {
+        Reflect.set(this, "password", undefined);
         return;
       }
       // TODO(NODE-3485): Replace this with a MongoAuthValidationError
-      throw new MongoAPIError(`Password not allowed for mechanism MONGODB-X509`);
+      throw new MongoAPIError(
+        `Password not allowed for mechanism MONGODB-X509`,
+      );
     }
 
-    const canonicalization = this.mechanismProperties.CANONICALIZE_HOST_NAME ?? false;
-    if (!Object.values(GSSAPICanonicalizationValue).includes(canonicalization)) {
-      throw new MongoAPIError(`Invalid CANONICALIZE_HOST_NAME value: ${canonicalization}`);
+    const canonicalization = this.mechanismProperties.CANONICALIZE_HOST_NAME ??
+      false;
+    if (
+      !Object.values(GSSAPICanonicalizationValue).includes(canonicalization)
+    ) {
+      throw new MongoAPIError(
+        `Invalid CANONICALIZE_HOST_NAME value: ${canonicalization}`,
+      );
     }
   }
 
   static merge(
     creds: MongoCredentials | undefined,
-    options: Partial<MongoCredentialsOptions>
+    options: Partial<MongoCredentialsOptions>,
   ): MongoCredentials {
     return new MongoCredentials({
-      username: options.username ?? creds?.username ?? '',
-      password: options.password ?? creds?.password ?? '',
-      mechanism: options.mechanism ?? creds?.mechanism ?? AuthMechanism.MONGODB_DEFAULT,
-      mechanismProperties: options.mechanismProperties ?? creds?.mechanismProperties ?? {},
-      source: options.source ?? options.db ?? creds?.source ?? 'admin'
+      username: options.username ?? creds?.username ?? "",
+      password: options.password ?? creds?.password ?? "",
+      mechanism: options.mechanism ?? creds?.mechanism ??
+        AuthMechanism.MONGODB_DEFAULT,
+      mechanismProperties: options.mechanismProperties ??
+        creds?.mechanismProperties ?? {},
+      source: options.source ?? options.db ?? creds?.source ?? "admin",
     });
   }
 }

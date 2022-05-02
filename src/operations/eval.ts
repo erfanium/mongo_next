@@ -1,12 +1,12 @@
-import { Code, Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import type { Db } from '../db.ts';
-import { MongoServerError } from '../error.ts';
-import { ReadPreference } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
+import { Code, Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import type { Db } from "../db.ts";
+import { MongoServerError } from "../error.ts";
+import { ReadPreference } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
 
 /** @public */
 export interface EvalOptions extends CommandOperationOptions {
@@ -23,7 +23,7 @@ export class EvalOperation extends CommandOperation<Document> {
     db: Db | Collection,
     code: Code,
     parameters?: Document | Document[],
-    options?: EvalOptions
+    options?: EvalOptions,
   ) {
     super(db, options);
 
@@ -31,29 +31,34 @@ export class EvalOperation extends CommandOperation<Document> {
     this.code = code;
     this.parameters = parameters;
     // force primary read preference
-    Object.defineProperty(this, 'readPreference', {
+    Object.defineProperty(this, "readPreference", {
       value: ReadPreference.primary,
       configurable: false,
-      writable: false
+      writable: false,
     });
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     let finalCode = this.code;
     let finalParameters: Document[] = [];
 
     // If not a code object translate to one
-    if (!(finalCode && (finalCode as unknown as { _bsontype: string })._bsontype === 'Code')) {
+    if (
+      !(finalCode &&
+        (finalCode as unknown as { _bsontype: string })._bsontype === "Code")
+    ) {
       finalCode = new Code(finalCode as never);
     }
 
     // Ensure the parameters are correct
-    if (this.parameters != null && typeof this.parameters !== 'function') {
-      finalParameters = Array.isArray(this.parameters) ? this.parameters : [this.parameters];
+    if (this.parameters != null && typeof this.parameters !== "function") {
+      finalParameters = Array.isArray(this.parameters)
+        ? this.parameters
+        : [this.parameters];
     }
 
     // Create execution selector
@@ -72,7 +77,9 @@ export class EvalOperation extends CommandOperation<Document> {
       }
 
       if (result) {
-        callback(new MongoServerError({ message: `eval failed: ${result.errmsg}` }));
+        callback(
+          new MongoServerError({ message: `eval failed: ${result.errmsg}` }),
+        );
         return;
       }
 

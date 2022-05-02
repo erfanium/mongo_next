@@ -1,5 +1,5 @@
-import { MongoDriverError } from '../error.ts';
-import type { ConnectionPool } from './connection_pool.ts';
+import { MongoDriverError } from "../error.ts";
+import type { ConnectionPool } from "./connection_pool.ts";
 
 /**
  * An error indicating a connection pool is closed
@@ -10,12 +10,12 @@ export class PoolClosedError extends MongoDriverError {
   address: string;
 
   constructor(pool: ConnectionPool) {
-    super('Attempted to check out a connection from closed connection pool');
+    super("Attempted to check out a connection from closed connection pool");
     this.address = pool.address;
   }
 
   override get name(): string {
-    return 'MongoPoolClosedError';
+    return "MongoPoolClosedError";
   }
 }
 
@@ -33,6 +33,6 @@ export class WaitQueueTimeoutError extends MongoDriverError {
   }
 
   override get name(): string {
-    return 'MongoWaitQueueTimeoutError';
+    return "MongoWaitQueueTimeoutError";
   }
 }

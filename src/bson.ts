@@ -1,51 +1,46 @@
-import type {
-  calculateObjectSize as calculateObjectSizeFn,
-  deserialize as deserializeFn,
-  DeserializeOptions,
-  serialize as serializeFn,
-  SerializeOptions
-} from 'bson';
-
-import BSON from 'bson';
+import { Bson } from "../deps.ts";
 
 /** @internal */
-export const deserialize = BSON.deserialize as typeof deserializeFn;
+export const deserialize = Bson.deserialize as typeof Bson.deserialize;
 /** @internal */
-export const serialize = BSON.serialize as typeof serializeFn;
+export const serialize = Bson.serialize as typeof Bson.serialize;
 /** @internal */
-export const calculateObjectSize = BSON.calculateObjectSize as typeof calculateObjectSizeFn;
+export const calculateObjectSize = Bson
+  .calculateObjectSize as typeof Bson.calculateObjectSize;
 
 export {
-Binary,
-BSONRegExp,
-BSONSymbol,
-Code,
-DBRef,
-Decimal128,Double,
-Int32,
-Long,
-Map,
-MaxKey,
-MinKey,
-ObjectId,
-Timestamp
-} from 'bson';
-export type { Document } from 'bson';
+  Binary,
+  BSONRegExp,
+  BSONSymbol,
+  Code,
+  DBRef,
+  Decimal128,
+  Double,
+  Int32,
+  Long,
+  Map,
+  MaxKey,
+  MinKey,
+  ObjectId,
+  Timestamp,
+} from "../bson.ts";
+export type { Document } from "../bson.ts";
 
 /**
  * BSON Serialization options.
  * @public
  */
 export interface BSONSerializeOptions
-  extends Omit<SerializeOptions, 'index'>,
+  extends
+    Omit<Bson.SerializeOptions, "index">,
     Omit<
-      DeserializeOptions,
-      | 'evalFunctions'
-      | 'cacheFunctions'
-      | 'cacheFunctionsCrc32'
-      | 'allowObjectSmallerThanBufferSize'
-      | 'index'
-      | 'validation'
+    Bson.DeserializeOptions,
+      | "evalFunctions"
+      | "cacheFunctions"
+      | "cacheFunctionsCrc32"
+      | "allowObjectSmallerThanBufferSize"
+      | "index"
+      | "validation"
     > {
   /** Return BSON filled buffers from operations */
   raw?: boolean;
@@ -54,7 +49,9 @@ export interface BSONSerializeOptions
   enableUtf8Validation?: boolean;
 }
 
-export function pluckBSONSerializeOptions(options: BSONSerializeOptions): BSONSerializeOptions {
+export function pluckBSONSerializeOptions(
+  options: BSONSerializeOptions,
+): BSONSerializeOptions {
   const {
     fieldsAsRaw,
     promoteValues,
@@ -64,7 +61,7 @@ export function pluckBSONSerializeOptions(options: BSONSerializeOptions): BSONSe
     ignoreUndefined,
     bsonRegExp,
     raw,
-    enableUtf8Validation
+    enableUtf8Validation,
   } = options;
   return {
     fieldsAsRaw,
@@ -75,7 +72,7 @@ export function pluckBSONSerializeOptions(options: BSONSerializeOptions): BSONSe
     ignoreUndefined,
     bsonRegExp,
     raw,
-    enableUtf8Validation
+    enableUtf8Validation,
   };
 }
 
@@ -87,19 +84,23 @@ export function pluckBSONSerializeOptions(options: BSONSerializeOptions): BSONSe
  */
 export function resolveBSONOptions(
   options?: BSONSerializeOptions,
-  parent?: { bsonOptions?: BSONSerializeOptions }
+  parent?: { bsonOptions?: BSONSerializeOptions },
 ): BSONSerializeOptions {
   const parentOptions = parent?.bsonOptions;
   return {
     raw: options?.raw ?? parentOptions?.raw ?? false,
     promoteLongs: options?.promoteLongs ?? parentOptions?.promoteLongs ?? true,
-    promoteValues: options?.promoteValues ?? parentOptions?.promoteValues ?? true,
-    promoteBuffers: options?.promoteBuffers ?? parentOptions?.promoteBuffers ?? false,
-    ignoreUndefined: options?.ignoreUndefined ?? parentOptions?.ignoreUndefined ?? false,
+    promoteValues: options?.promoteValues ?? parentOptions?.promoteValues ??
+      true,
+    promoteBuffers: options?.promoteBuffers ?? parentOptions?.promoteBuffers ??
+      false,
+    ignoreUndefined: options?.ignoreUndefined ??
+      parentOptions?.ignoreUndefined ?? false,
     bsonRegExp: options?.bsonRegExp ?? parentOptions?.bsonRegExp ?? false,
-    serializeFunctions: options?.serializeFunctions ?? parentOptions?.serializeFunctions ?? false,
+    serializeFunctions: options?.serializeFunctions ??
+      parentOptions?.serializeFunctions ?? false,
     fieldsAsRaw: options?.fieldsAsRaw ?? parentOptions?.fieldsAsRaw ?? {},
-    enableUtf8Validation:
-      options?.enableUtf8Validation ?? parentOptions?.enableUtf8Validation ?? true
+    enableUtf8Validation: options?.enableUtf8Validation ??
+      parentOptions?.enableUtf8Validation ?? true,
   };
 }

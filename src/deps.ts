@@ -1,35 +1,41 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import type { deserialize, Document, serialize } from './bson.ts';
-import type { ProxyOptions } from './cmap/connection.ts';
-import { MongoMissingDependencyError } from './error.ts';
-import type { MongoClient } from './mongo_client.ts';
-import { Callback, parsePackageVersion } from './utils.ts';
+import type { deserialize, Document, serialize } from "./bson.ts";
+import type { ProxyOptions } from "./cmap/connection.ts";
+import { MongoMissingDependencyError } from "./error.ts";
+import type { MongoClient } from "./mongo_client.ts";
+import { Callback, parsePackageVersion } from "./utils.ts";
 
-export const PKG_VERSION = Symbol('kPkgVersion');
+export const PKG_VERSION = Symbol("kPkgVersion");
 
 function makeErrorModule(error: any) {
   const props = error ? { kModuleError: error } : {};
   return new Proxy(props, {
     get: (_: any, key: any) => {
-      if (key === 'kModuleError') {
+      if (key === "kModuleError") {
         return error;
       }
       throw error;
     },
     set: () => {
       throw error;
-    }
+    },
   });
 }
 
 export interface KerberosClient {
-  step: (challenge: string, callback?: Callback<string>) => Promise<string> | void;
+  step: (
+    challenge: string,
+    callback?: Callback<string>,
+  ) => Promise<string> | void;
   wrap: (
     challenge: string,
     options?: { user: string },
-    callback?: Callback<string>
+    callback?: Callback<string>,
   ) => Promise<string> | void;
-  unwrap: (challenge: string, callback?: Callback<string>) => Promise<string> | void;
+  unwrap: (
+    challenge: string,
+    callback?: Callback<string>,
+  ) => Promise<string> | void;
 }
 
 type SnappyLib = {
@@ -44,10 +50,13 @@ type SnappyLib = {
    * @param callback - ONLY USED IN SNAPPY 6.x
    */
   compress(buf: Buffer): Promise<Buffer>;
-  compress(buf: Buffer, callback: (error?: Error, buffer?: Buffer) => void): Promise<Buffer> | void;
   compress(
     buf: Buffer,
-    callback?: (error?: Error, buffer?: Buffer) => void
+    callback: (error?: Error, buffer?: Buffer) => void,
+  ): Promise<Buffer> | void;
+  compress(
+    buf: Buffer,
+    callback?: (error?: Error, buffer?: Buffer) => void,
   ): Promise<Buffer> | void;
 
   /**
@@ -62,15 +71,14 @@ type SnappyLib = {
   uncompress(
     buf: Buffer,
     opt: { asBuffer: true },
-    callback: (error?: Error, buffer?: Buffer) => void
+    callback: (error?: Error, buffer?: Buffer) => void,
   ): Promise<Buffer> | void;
   uncompress(
     buf: Buffer,
     opt: { asBuffer: true },
-    callback?: (error?: Error, buffer?: Buffer) => void
+    callback?: (error?: Error, buffer?: Buffer) => void,
   ): Promise<Buffer> | void;
 };
-
 
 interface AWS4 {
   /**
@@ -80,52 +88,55 @@ interface AWS4 {
    */
   sign(
     options: {
-      path: '/';
+      path: "/";
       body: string;
       host: string;
-      method: 'POST';
+      method: "POST";
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded';
-        'Content-Length': number;
-        'X-MongoDB-Server-Nonce': string;
-        'X-MongoDB-GS2-CB-Flag': 'n';
+        "Content-Type": "application/x-www-form-urlencoded";
+        "Content-Length": number;
+        "X-MongoDB-Server-Nonce": string;
+        "X-MongoDB-GS2-CB-Flag": "n";
       };
       service: string;
       region: string;
     },
     credentials:
       | {
-          accessKeyId: string;
-          secretAccessKey: string;
-          sessionToken: string;
-        }
+        accessKeyId: string;
+        secretAccessKey: string;
+        sessionToken: string;
+      }
       | {
-          accessKeyId: string;
-          secretAccessKey: string;
-        }
-      | undefined
+        accessKeyId: string;
+        secretAccessKey: string;
+      }
+      | undefined,
   ): {
     headers: {
       Authorization: string;
-      'X-Amz-Date': string;
+      "X-Amz-Date": string;
     };
   };
 }
 
-export let aws4: AWS4 | { kModuleError: MongoMissingDependencyError } = makeErrorModule(
-  new MongoMissingDependencyError(
-    'Optional module `aws4` not found. Please install it to enable AWS authentication'
-  )
-);
+export let aws4: AWS4 | { kModuleError: MongoMissingDependencyError } =
+  makeErrorModule(
+    new MongoMissingDependencyError(
+      "Optional module `aws4` not found. Please install it to enable AWS authentication",
+    ),
+  );
 
 /** @public */
-export const AutoEncryptionLoggerLevel = Object.freeze({
-  FatalError: 0,
-  Error: 1,
-  Warning: 2,
-  Info: 3,
-  Trace: 4
-} as const);
+export const AutoEncryptionLoggerLevel = Object.freeze(
+  {
+    FatalError: 0,
+    Error: 1,
+    Warning: 2,
+    Info: 3,
+    Trace: 4,
+  } as const,
+);
 
 /** @public */
 export type AutoEncryptionLoggerLevel =
@@ -309,7 +320,12 @@ export interface AutoEncrypter {
   new (client: MongoClient, options: AutoEncryptionOptions): AutoEncrypter;
   init(cb: Callback): void;
   teardown(force: boolean, callback: Callback): void;
-  encrypt(ns: string, cmd: Document, options: any, callback: Callback<Document>): void;
+  encrypt(
+    ns: string,
+    cmd: Document,
+    options: any,
+    callback: Callback<Document>,
+  ): void;
   decrypt(cmd: Document, options: any, callback: Callback<Document>): void;
   readonly csfleVersionInfo: { version: bigint; versionStr: string } | null;
 }

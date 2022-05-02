@@ -1,31 +1,54 @@
-import Denque from 'denque';
-import type { Readable } from 'stream';
+import { Denque } from "../deps.ts";
+import type { Stream } from "../deps.ts";
 
-import type { Document, Long, Timestamp } from './bson.ts';
-import { Collection } from './collection.ts';
-import { CHANGE, CLOSE, END, ERROR, INIT, MORE, RESPONSE, RESUME_TOKEN_CHANGED } from './constants.ts';
+import type { Document, Long, Timestamp } from "./bson.ts";
+import { Collection } from "./collection.ts";
+import {
+  CHANGE,
+  CLOSE,
+  END,
+  ERROR,
+  INIT,
+  MORE,
+  RESPONSE,
+  RESUME_TOKEN_CHANGED,
+} from "./constants.ts";
 import {
   AbstractCursor,
   AbstractCursorEvents,
   AbstractCursorOptions,
-  CursorStreamOptions
-} from './cursor/abstract_cursor.ts';
-import { Db } from './db.ts';
+  CursorStreamOptions,
+} from "./cursor/abstract_cursor.ts";
+import { Db } from "./db.ts";
 import {
   AnyError,
   isResumableError,
   MongoAPIError,
   MongoChangeStreamError,
-  MongoRuntimeError
-} from './error.ts';
-import { MongoClient } from './mongo_client.ts';
-import { InferIdType, Nullable, TODO_NODE_3286, TypedEventEmitter } from './mongo_types.ts';
-import { AggregateOperation, AggregateOptions } from './operations/aggregate.ts';
-import type { CollationOptions, OperationParent } from './operations/command.ts';
-import { executeOperation, ExecutionResult } from './operations/execute_operation.ts';
-import type { ReadPreference } from './read_preference.ts';
-import type { Topology } from './sdam/topology.ts';
-import type { ClientSession } from './sessions.ts';
+  MongoRuntimeError,
+} from "./error.ts";
+import { MongoClient } from "./mongo_client.ts";
+import {
+  InferIdType,
+  Nullable,
+  TODO_NODE_3286,
+  TypedEventEmitter,
+} from "./mongo_types.ts";
+import {
+  AggregateOperation,
+  AggregateOptions,
+} from "./operations/aggregate.ts";
+import type {
+  CollationOptions,
+  OperationParent,
+} from "./operations/command.ts";
+import {
+  executeOperation,
+  ExecutionResult,
+} from "./operations/execute_operation.ts";
+import type { ReadPreference } from "./read_preference.ts";
+import type { Topology } from "./sdam/topology.ts";
+import type { ClientSession } from "./sessions.ts";
 import {
   calculateDurationInMs,
   Callback,
@@ -34,38 +57,38 @@ import {
   maxWireVersion,
   maybePromise,
   MongoDBNamespace,
-  now
-} from './utils.ts';
+  now,
+} from "./utils.ts";
 
 /** @internal */
-const kResumeQueue = Symbol('resumeQueue');
+const kResumeQueue = Symbol("resumeQueue");
 /** @internal */
-const kCursorStream = Symbol('cursorStream');
+const kCursorStream = Symbol("cursorStream");
 /** @internal */
-const kClosed = Symbol('closed');
+const kClosed = Symbol("closed");
 /** @internal */
-const kMode = Symbol('mode');
+const kMode = Symbol("mode");
 
 const CHANGE_STREAM_OPTIONS = [
-  'resumeAfter',
-  'startAfter',
-  'startAtOperationTime',
-  'fullDocument'
+  "resumeAfter",
+  "startAfter",
+  "startAtOperationTime",
+  "fullDocument",
 ] as const;
 
 const CURSOR_OPTIONS = [
-  'batchSize',
-  'maxAwaitTimeMS',
-  'collation',
-  'readPreference',
-  'comment',
-  ...CHANGE_STREAM_OPTIONS
+  "batchSize",
+  "maxAwaitTimeMS",
+  "collation",
+  "readPreference",
+  "comment",
+  ...CHANGE_STREAM_OPTIONS,
 ] as const;
 
 const CHANGE_DOMAIN_TYPES = {
-  COLLECTION: Symbol('Collection'),
-  DATABASE: Symbol('Database'),
-  CLUSTER: Symbol('Cluster')
+  COLLECTION: Symbol("Collection"),
+  DATABASE: Symbol("Database"),
+  CLUSTER: Symbol("Cluster"),
 };
 
 interface TopologyWaitOptions {
@@ -79,9 +102,9 @@ const SELECTION_TIMEOUT = 30000;
 const CHANGE_STREAM_EVENTS = [RESUME_TOKEN_CHANGED, END, CLOSE];
 
 const NO_RESUME_TOKEN_ERROR =
-  'A change stream document has been received that lacks a resume token (_id).';
-const NO_CURSOR_ERROR = 'ChangeStream has no cursor';
-const CHANGESTREAM_CLOSED_ERROR = 'ChangeStream is closed';
+  "A change stream document has been received that lacks a resume token (_id).";
+const NO_CURSOR_ERROR = "ChangeStream has no cursor";
+const CHANGESTREAM_CLOSED_ERROR = "ChangeStream is closed";
 
 /** @public */
 export interface ResumeOptions {
@@ -156,14 +179,14 @@ export interface ChangeStreamDocument<TSchema extends Document = Document> {
    * Describes the type of operation represented in this change notification.
    */
   operationType:
-    | 'insert'
-    | 'update'
-    | 'replace'
-    | 'delete'
-    | 'invalidate'
-    | 'drop'
-    | 'dropDatabase'
-    | 'rename';
+    | "insert"
+    | "update"
+    | "replace"
+    | "delete"
+    | "invalidate"
+    | "drop"
+    | "dropDatabase"
+    | "rename";
 
   /**
    * Contains two fields: “db” and “coll” containing the database and
@@ -235,9 +258,10 @@ export type ChangeStreamEvents<TSchema extends Document = Document> = {
  * Creates a new Change Stream instance. Normally created using {@link Collection#watch|Collection.watch()}.
  * @public
  */
-export class ChangeStream<TSchema extends Document = Document> extends TypedEventEmitter<
-  ChangeStreamEvents<TSchema>
-> {
+export class ChangeStream<TSchema extends Document = Document>
+  extends TypedEventEmitter<
+    ChangeStreamEvents<TSchema>
+  > {
   pipeline: Document[];
   options: ChangeStreamOptions;
   parent: MongoClient | Db | Collection;
@@ -249,11 +273,11 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   /** @internal */
   [kResumeQueue]: Denque<Callback<ChangeStreamCursor<TSchema>>>;
   /** @internal */
-  [kCursorStream]?: Readable;
+  [kCursorStream]?: Stream.Readable;
   /** @internal */
   [kClosed]: boolean;
   /** @internal */
-  [kMode]: false | 'iterator' | 'emitter';
+  [kMode]: false | "iterator" | "emitter";
 
   /** @event */
   static readonly RESPONSE = RESPONSE;
@@ -278,7 +302,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
    * Emitted each time the change stream stores a new resume token.
    * @event
    */
-  static readonly RESUME_TOKEN_CHANGED = 'resumeTokenChanged' as const;
+  static readonly RESUME_TOKEN_CHANGED = "resumeTokenChanged" as const;
 
   /**
    * @internal
@@ -289,7 +313,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   constructor(
     parent: OperationParent,
     pipeline: Document[] = [],
-    options: ChangeStreamOptions = {}
+    options: ChangeStreamOptions = {},
   ) {
     super();
 
@@ -304,7 +328,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
       this.type = CHANGE_DOMAIN_TYPES.CLUSTER;
     } else {
       throw new MongoChangeStreamError(
-        'Parent provided to ChangeStream constructor must be an instance of Collection, Db, or MongoClient'
+        "Parent provided to ChangeStream constructor must be an instance of Collection, Db, or MongoClient",
       );
     }
 
@@ -323,21 +347,28 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
     this[kMode] = false;
 
     // Listen for any `change` listeners being added to ChangeStream
-    this.on('newListener', eventName => {
-      if (eventName === 'change' && this.cursor && this.listenerCount('change') === 0) {
+    this.on("newListener", (eventName) => {
+      if (
+        eventName === "change" && this.cursor &&
+        this.listenerCount("change") === 0
+      ) {
         this._streamEvents(this.cursor);
       }
     });
 
-    this.on('removeListener', eventName => {
-      if (eventName === 'change' && this.listenerCount('change') === 0 && this.cursor) {
-        this[kCursorStream]?.removeAllListeners('data');
+    this.on("removeListener", (eventName) => {
+      if (
+        eventName === "change" && this.listenerCount("change") === 0 &&
+        this.cursor
+      ) {
+        // @ts-ignore // TODO(erfan): fix this
+        this[kCursorStream]?.removeAllListeners("data");
       }
     });
   }
 
   /** @internal */
-  get cursorStream(): Readable | undefined {
+  get cursorStream(): Stream.Readable | undefined {
     return this[kCursorStream];
   }
 
@@ -351,7 +382,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   hasNext(callback: Callback<boolean>): void;
   hasNext(callback?: Callback): Promise<boolean> | void {
     this._setIsIterator();
-    return maybePromise(callback, cb => {
+    return maybePromise(callback, (cb) => {
       this._getCursor((err, cursor) => {
         if (err || !cursor) return cb(err); // failed to resume, raise an error
         cursor.hasNext(cb);
@@ -363,10 +394,10 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   next(): Promise<ChangeStreamDocument<TSchema>>;
   next(callback: Callback<ChangeStreamDocument<TSchema>>): void;
   next(
-    callback?: Callback<ChangeStreamDocument<TSchema>>
+    callback?: Callback<ChangeStreamDocument<TSchema>>,
   ): Promise<ChangeStreamDocument<TSchema>> | void {
     this._setIsIterator();
-    return maybePromise(callback, cb => {
+    return maybePromise(callback, (cb) => {
       this._getCursor((err, cursor) => {
         if (err || !cursor) return cb(err); // failed to resume, raise an error
         cursor.next((error, change) => {
@@ -390,13 +421,13 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   close(callback?: Callback): Promise<void> | void {
     this[kClosed] = true;
 
-    return maybePromise(callback, cb => {
+    return maybePromise(callback, (cb) => {
       if (!this.cursor) {
         return cb();
       }
 
       const cursor = this.cursor;
-      return cursor.close(err => {
+      return cursor.close((err) => {
         this._endStream();
         this.cursor = undefined;
         return cb(err);
@@ -408,7 +439,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
    * Return a modified Readable stream including a possible transform method.
    * @throws MongoDriverError if this.cursor is undefined
    */
-  stream(options?: CursorStreamOptions): Readable {
+  stream(options?: CursorStreamOptions): Stream.Readable {
     this.streamOptions = options;
     if (!this.cursor) throw new MongoChangeStreamError(NO_CURSOR_ERROR);
     return this.cursor.stream(options);
@@ -419,9 +450,11 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
    */
   tryNext(): Promise<Document | null>;
   tryNext(callback: Callback<Document | null>): void;
-  tryNext(callback?: Callback<Document | null>): Promise<Document | null> | void {
+  tryNext(
+    callback?: Callback<Document | null>,
+  ): Promise<Document | null> | void {
     this._setIsIterator();
-    return maybePromise(callback, cb => {
+    return maybePromise(callback, (cb) => {
       this._getCursor((err, cursor) => {
         if (err || !cursor) return cb(err); // failed to resume, raise an error
         return cursor.tryNext(cb);
@@ -431,47 +464,56 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
 
   /** @internal */
   private _setIsEmitter(): void {
-    if (this[kMode] === 'iterator') {
+    if (this[kMode] === "iterator") {
       // TODO(NODE-3485): Replace with MongoChangeStreamModeError
       throw new MongoAPIError(
-        'ChangeStream cannot be used as an EventEmitter after being used as an iterator'
+        "ChangeStream cannot be used as an EventEmitter after being used as an iterator",
       );
     }
-    this[kMode] = 'emitter';
+    this[kMode] = "emitter";
   }
 
   /** @internal */
   private _setIsIterator(): void {
-    if (this[kMode] === 'emitter') {
+    if (this[kMode] === "emitter") {
       // TODO(NODE-3485): Replace with MongoChangeStreamModeError
       throw new MongoAPIError(
-        'ChangeStream cannot be used as an iterator after being used as an EventEmitter'
+        "ChangeStream cannot be used as an iterator after being used as an EventEmitter",
       );
     }
-    this[kMode] = 'iterator';
+    this[kMode] = "iterator";
   }
 
   /** @internal */
   private _createChangeStreamCursor(
-    options: ChangeStreamOptions | ResumeOptions
+    options: ChangeStreamOptions | ResumeOptions,
   ): ChangeStreamCursor<TSchema> {
-    const changeStreamStageOptions = filterOptions(options, CHANGE_STREAM_OPTIONS);
+    const changeStreamStageOptions = filterOptions(
+      options,
+      CHANGE_STREAM_OPTIONS,
+    );
     if (this.type === CHANGE_DOMAIN_TYPES.CLUSTER) {
       changeStreamStageOptions.allChangesForCluster = true;
     }
-    const pipeline = [{ $changeStream: changeStreamStageOptions }, ...this.pipeline];
+    const pipeline = [
+      { $changeStream: changeStreamStageOptions },
+      ...this.pipeline,
+    ];
 
-    const cursorOptions: ChangeStreamCursorOptions = filterOptions(options, CURSOR_OPTIONS);
+    const cursorOptions: ChangeStreamCursorOptions = filterOptions(
+      options,
+      CURSOR_OPTIONS,
+    );
 
     const changeStreamCursor = new ChangeStreamCursor<TSchema>(
       getTopology(this.parent),
       this.namespace,
       pipeline,
-      cursorOptions
+      cursorOptions,
     );
 
     for (const event of CHANGE_STREAM_EVENTS) {
-      changeStreamCursor.on(event, e => this.emit(event, e));
+      changeStreamCursor.on(event, (e) => this.emit(event, e));
     }
 
     if (this.listenerCount(ChangeStream.CHANGE) > 0) {
@@ -489,7 +531,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   private _waitForTopologyConnected(
     topology: Topology,
     options: TopologyWaitOptions,
-    callback: Callback
+    callback: Callback,
   ) {
     setTimeout(() => {
       if (options && options.start == null) {
@@ -504,7 +546,9 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
 
       if (calculateDurationInMs(start) > timeout) {
         // TODO(NODE-3497): Replace with MongoNetworkTimeoutError
-        return callback(new MongoRuntimeError('Timed out waiting for connection'));
+        return callback(
+          new MongoRuntimeError("Timed out waiting for connection"),
+        );
       }
 
       this._waitForTopologyConnected(topology, options, callback);
@@ -525,15 +569,17 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
     this._setIsEmitter();
     const stream = this[kCursorStream] ?? cursor.stream();
     this[kCursorStream] = stream;
-    stream.on('data', change => this._processNewChange(change));
-    stream.on('error', error => this._processError(error));
+    stream.on("data", (change) => this._processNewChange(change));
+    stream.on("error", (error) => this._processError(error));
   }
 
   /** @internal */
   private _endStream(): void {
     const cursorStream = this[kCursorStream];
     if (cursorStream) {
-      ['data', 'close', 'end', 'error'].forEach(event => cursorStream.removeAllListeners(event));
+      ["data", "close", "end", "error"].forEach((event) =>
+        cursorStream.removeAllListeners(event)
+      );
       cursorStream.destroy();
     }
 
@@ -543,7 +589,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
   /** @internal */
   private _processNewChange(
     change: Nullable<ChangeStreamDocument<TSchema>>,
-    callback?: Callback<ChangeStreamDocument<TSchema>>
+    callback?: Callback<ChangeStreamDocument<TSchema>>,
   ) {
     if (this[kClosed]) {
       // TODO(NODE-3485): Replace with MongoChangeStreamClosedError
@@ -554,11 +600,17 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
     // a null change means the cursor has been notified, implicitly closing the change stream
     if (change == null) {
       // TODO(NODE-3485): Replace with MongoChangeStreamClosedError
-      return this._closeWithError(new MongoRuntimeError(CHANGESTREAM_CLOSED_ERROR), callback);
+      return this._closeWithError(
+        new MongoRuntimeError(CHANGESTREAM_CLOSED_ERROR),
+        callback,
+      );
     }
 
     if (change && !change._id) {
-      return this._closeWithError(new MongoChangeStreamError(NO_RESUME_TOKEN_ERROR), callback);
+      return this._closeWithError(
+        new MongoChangeStreamError(NO_RESUME_TOKEN_ERROR),
+        callback,
+      );
     }
 
     // cache the resume token
@@ -609,7 +661,9 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
       cursor.close();
 
       const topology = getTopology(this.parent);
-      this._waitForTopologyConnected(topology, { readPreference: cursor.readPreference }, err => {
+      this._waitForTopologyConnected(topology, {
+        readPreference: cursor.readPreference,
+      }, (err) => {
         // if the topology can't reconnect, close the stream
         if (err) return unresumableError(err);
 
@@ -620,7 +674,7 @@ export class ChangeStream<TSchema extends Document = Document> extends TypedEven
         if (!callback) return resumeWithCursor(newCursor);
 
         // attempt to continue in iterator mode
-        newCursor.hasNext(err => {
+        newCursor.hasNext((err) => {
           // if there's an error immediately after resuming, close the stream
           if (err) return unresumableError(err);
           resumeWithCursor(newCursor);
@@ -689,10 +743,11 @@ export interface ChangeStreamCursorOptions extends AbstractCursorOptions {
 }
 
 /** @internal */
-export class ChangeStreamCursor<TSchema extends Document = Document> extends AbstractCursor<
-  ChangeStreamDocument<TSchema>,
-  ChangeStreamEvents
-> {
+export class ChangeStreamCursor<TSchema extends Document = Document>
+  extends AbstractCursor<
+    ChangeStreamDocument<TSchema>,
+    ChangeStreamEvents
+  > {
   _resumeToken: ResumeToken;
   startAtOperationTime?: OperationTime;
   hasReceived?: boolean;
@@ -707,7 +762,7 @@ export class ChangeStreamCursor<TSchema extends Document = Document> extends Abs
     topology: Topology,
     namespace: MongoDBNamespace,
     pipeline: Document[] = [],
-    options: ChangeStreamCursorOptions = {}
+    options: ChangeStreamCursorOptions = {},
   ) {
     super(topology, namespace, options);
 
@@ -736,16 +791,19 @@ export class ChangeStreamCursor<TSchema extends Document = Document> extends Abs
     const result: ResumeOptions = filterOptions(this.options, CURSOR_OPTIONS);
 
     if (this.resumeToken || this.startAtOperationTime) {
-      for (const key of ['resumeAfter', 'startAfter', 'startAtOperationTime']) {
+      for (const key of ["resumeAfter", "startAfter", "startAtOperationTime"]) {
         Reflect.deleteProperty(result, key);
       }
 
       if (this.resumeToken) {
-        const resumeKey =
-          this.options.startAfter && !this.hasReceived ? 'startAfter' : 'resumeAfter';
+        const resumeKey = this.options.startAfter && !this.hasReceived
+          ? "startAfter"
+          : "resumeAfter";
 
         result[resumeKey] = this.resumeToken;
-      } else if (this.startAtOperationTime && maxWireVersion(this.server) >= 7) {
+      } else if (
+        this.startAtOperationTime && maxWireVersion(this.server) >= 7
+      ) {
         result.startAtOperationTime = this.startAtOperationTime;
       }
     }
@@ -768,8 +826,9 @@ export class ChangeStreamCursor<TSchema extends Document = Document> extends Abs
     if (cursor.postBatchResumeToken) {
       this.postBatchResumeToken = cursor.postBatchResumeToken;
 
-      const batch =
-        'firstBatch' in response.cursor ? response.cursor.firstBatch : response.cursor.nextBatch;
+      const batch = "firstBatch" in response.cursor
+        ? response.cursor.firstBatch
+        : response.cursor.nextBatch;
       if (batch.length === 0) {
         this.resumeToken = cursor.postBatchResumeToken;
       }
@@ -777,17 +836,29 @@ export class ChangeStreamCursor<TSchema extends Document = Document> extends Abs
   }
 
   clone(): AbstractCursor<ChangeStreamDocument<TSchema>> {
-    return new ChangeStreamCursor(this.topology, this.namespace, this.pipeline, {
-      ...this.cursorOptions
-    });
+    return new ChangeStreamCursor(
+      this.topology,
+      this.namespace,
+      this.pipeline,
+      {
+        ...this.cursorOptions,
+      },
+    );
   }
 
-  _initialize(session: ClientSession, callback: Callback<ExecutionResult>): void {
-    const aggregateOperation = new AggregateOperation(this.namespace, this.pipeline, {
-      ...this.cursorOptions,
-      ...this.options,
-      session
-    });
+  _initialize(
+    session: ClientSession,
+    callback: Callback<ExecutionResult>,
+  ): void {
+    const aggregateOperation = new AggregateOperation(
+      this.namespace,
+      this.pipeline,
+      {
+        ...this.cursorOptions,
+        ...this.options,
+        session,
+      },
+    );
 
     /* TODO(NODE4059): Use TChange instead of any */
     executeOperation<TODO_NODE_3286, ChangeStreamAggregateRawResult<any>>(
@@ -815,7 +886,7 @@ export class ChangeStreamCursor<TSchema extends Document = Document> extends Abs
 
         // TODO: NODE-2882
         callback(undefined, { server, session, response });
-      }
+      },
     );
   }
 
@@ -826,7 +897,9 @@ export class ChangeStreamCursor<TSchema extends Document = Document> extends Abs
       }
 
       // TODO(NODE-4059): Use TChange
-      this._processBatch(response as TODO_NODE_3286 as ChangeStreamAggregateRawResult<any>);
+      this._processBatch(
+        response as TODO_NODE_3286 as ChangeStreamAggregateRawResult<any>,
+      );
 
       this.emit(ChangeStream.MORE, response);
       this.emit(ChangeStream.RESPONSE);

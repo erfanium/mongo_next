@@ -1,22 +1,25 @@
-import type { Document } from './bson.ts';
-import { MongoInvalidArgumentError } from './error.ts';
-import type { TagSet } from './sdam/server_description.ts';
-import type { ClientSession } from './sessions.ts';
+import type { Document } from "./bson.ts";
+import { MongoInvalidArgumentError } from "./error.ts";
+import type { TagSet } from "./sdam/server_description.ts";
+import type { ClientSession } from "./sessions.ts";
 
 /** @public */
 export type ReadPreferenceLike = ReadPreference | ReadPreferenceMode;
 
 /** @public */
-export const ReadPreferenceMode = Object.freeze({
-  primary: 'primary',
-  primaryPreferred: 'primaryPreferred',
-  secondary: 'secondary',
-  secondaryPreferred: 'secondaryPreferred',
-  nearest: 'nearest'
-} as const);
+export const ReadPreferenceMode = Object.freeze(
+  {
+    primary: "primary",
+    primaryPreferred: "primaryPreferred",
+    secondary: "secondary",
+    secondaryPreferred: "secondaryPreferred",
+    nearest: "nearest",
+  } as const,
+);
 
 /** @public */
-export type ReadPreferenceMode = typeof ReadPreferenceMode[keyof typeof ReadPreferenceMode];
+export type ReadPreferenceMode =
+  typeof ReadPreferenceMode[keyof typeof ReadPreferenceMode];
 
 /** @public */
 export interface HedgeOptions {
@@ -37,11 +40,11 @@ export interface ReadPreferenceLikeOptions extends ReadPreferenceOptions {
   readPreference?:
     | ReadPreferenceLike
     | {
-        mode?: ReadPreferenceMode;
-        preference?: ReadPreferenceMode;
-        tags?: TagSet[];
-        maxStalenessSeconds?: number;
-      };
+      mode?: ReadPreferenceMode;
+      preference?: ReadPreferenceMode;
+      tags?: TagSet[];
+      maxStalenessSeconds?: number;
+    };
 }
 
 /** @public */
@@ -72,9 +75,13 @@ export class ReadPreference {
   public static NEAREST = ReadPreferenceMode.nearest;
 
   public static primary = new ReadPreference(ReadPreferenceMode.primary);
-  public static primaryPreferred = new ReadPreference(ReadPreferenceMode.primaryPreferred);
+  public static primaryPreferred = new ReadPreference(
+    ReadPreferenceMode.primaryPreferred,
+  );
   public static secondary = new ReadPreference(ReadPreferenceMode.secondary);
-  public static secondaryPreferred = new ReadPreference(ReadPreferenceMode.secondaryPreferred);
+  public static secondaryPreferred = new ReadPreference(
+    ReadPreferenceMode.secondaryPreferred,
+  );
   public static nearest = new ReadPreference(ReadPreferenceMode.nearest);
 
   /**
@@ -82,15 +89,23 @@ export class ReadPreference {
    * @param tags - A tag set used to target reads to members with the specified tag(s). tagSet is not available if using read preference mode primary.
    * @param options - Additional read preference options
    */
-  constructor(mode: ReadPreferenceMode, tags?: TagSet[], options?: ReadPreferenceOptions) {
+  constructor(
+    mode: ReadPreferenceMode,
+    tags?: TagSet[],
+    options?: ReadPreferenceOptions,
+  ) {
     if (!ReadPreference.isValid(mode)) {
-      throw new MongoInvalidArgumentError(`Invalid read preference mode ${JSON.stringify(mode)}`);
+      throw new MongoInvalidArgumentError(
+        `Invalid read preference mode ${JSON.stringify(mode)}`,
+      );
     }
-    if (options == null && typeof tags === 'object' && !Array.isArray(tags)) {
+    if (options == null && typeof tags === "object" && !Array.isArray(tags)) {
       options = tags;
       tags = undefined;
     } else if (tags && !Array.isArray(tags)) {
-      throw new MongoInvalidArgumentError('ReadPreference tags must be an array');
+      throw new MongoInvalidArgumentError(
+        "ReadPreference tags must be an array",
+      );
     }
 
     this.mode = mode;
@@ -102,7 +117,9 @@ export class ReadPreference {
     options = options ?? {};
     if (options.maxStalenessSeconds != null) {
       if (options.maxStalenessSeconds <= 0) {
-        throw new MongoInvalidArgumentError('maxStalenessSeconds must be a positive integer');
+        throw new MongoInvalidArgumentError(
+          "maxStalenessSeconds must be a positive integer",
+        );
       }
 
       this.maxStalenessSeconds = options.maxStalenessSeconds;
@@ -114,18 +131,20 @@ export class ReadPreference {
 
     if (this.mode === ReadPreference.PRIMARY) {
       if (this.tags && Array.isArray(this.tags) && this.tags.length > 0) {
-        throw new MongoInvalidArgumentError('Primary read preference cannot be combined with tags');
+        throw new MongoInvalidArgumentError(
+          "Primary read preference cannot be combined with tags",
+        );
       }
 
       if (this.maxStalenessSeconds) {
         throw new MongoInvalidArgumentError(
-          'Primary read preference cannot be combined with maxStalenessSeconds'
+          "Primary read preference cannot be combined with maxStalenessSeconds",
         );
       }
 
       if (this.hedge) {
         throw new MongoInvalidArgumentError(
-          'Primary read preference cannot be combined with hedge'
+          "Primary read preference cannot be combined with hedge",
         );
       }
     }
@@ -145,31 +164,40 @@ export class ReadPreference {
    *
    * @param options - The options object from which to extract the read preference.
    */
-  static fromOptions(options?: ReadPreferenceFromOptions): ReadPreference | undefined {
+  static fromOptions(
+    options?: ReadPreferenceFromOptions,
+  ): ReadPreference | undefined {
     if (!options) return;
-    const readPreference =
-      options.readPreference ?? options.session?.transaction.options.readPreference;
+    const readPreference = options.readPreference ??
+      options.session?.transaction.options.readPreference;
     const readPreferenceTags = options.readPreferenceTags;
 
     if (readPreference == null) {
       return;
     }
 
-    if (typeof readPreference === 'string') {
-      return new ReadPreference(readPreference as ReadPreferenceMode, readPreferenceTags, {
-        maxStalenessSeconds: options.maxStalenessSeconds,
-        hedge: options.hedge
-      });
-    } else if (!(readPreference instanceof ReadPreference) && typeof readPreference === 'object') {
+    if (typeof readPreference === "string") {
+      return new ReadPreference(
+        readPreference as ReadPreferenceMode,
+        readPreferenceTags,
+        {
+          maxStalenessSeconds: options.maxStalenessSeconds,
+          hedge: options.hedge,
+        },
+      );
+    } else if (
+      !(readPreference instanceof ReadPreference) &&
+      typeof readPreference === "object"
+    ) {
       const mode = readPreference.mode || readPreference.preference;
-      if (mode && typeof mode === 'string') {
+      if (mode && typeof mode === "string") {
         return new ReadPreference(
           mode as ReadPreferenceMode,
           readPreference.tags ?? readPreferenceTags,
           {
             maxStalenessSeconds: readPreference.maxStalenessSeconds,
-            hedge: options.hedge
-          }
+            hedge: options.hedge,
+          },
         );
       }
     }
@@ -184,18 +212,24 @@ export class ReadPreference {
   /**
    * Replaces options.readPreference with a ReadPreference instance
    */
-  static translate(options: ReadPreferenceLikeOptions): ReadPreferenceLikeOptions {
+  static translate(
+    options: ReadPreferenceLikeOptions,
+  ): ReadPreferenceLikeOptions {
     if (options.readPreference == null) return options;
     const r = options.readPreference;
 
-    if (typeof r === 'string') {
+    if (typeof r === "string") {
       options.readPreference = new ReadPreference(r as ReadPreferenceMode);
-    } else if (r && !(r instanceof ReadPreference) && typeof r === 'object') {
+    } else if (r && !(r instanceof ReadPreference) && typeof r === "object") {
       const mode = r.mode || r.preference;
-      if (mode && typeof mode === 'string') {
-        options.readPreference = new ReadPreference(mode as ReadPreferenceMode, r.tags, {
-          maxStalenessSeconds: r.maxStalenessSeconds
-        });
+      if (mode && typeof mode === "string") {
+        options.readPreference = new ReadPreference(
+          mode as ReadPreferenceMode,
+          r.tags,
+          {
+            maxStalenessSeconds: r.maxStalenessSeconds,
+          },
+        );
       }
     } else if (!(r instanceof ReadPreference)) {
       throw new MongoInvalidArgumentError(`Invalid read preference: ${r}`);
@@ -216,7 +250,7 @@ export class ReadPreference {
       ReadPreference.SECONDARY,
       ReadPreference.SECONDARY_PREFERRED,
       ReadPreference.NEAREST,
-      null
+      null,
     ]);
 
     return VALID_MODES.has(mode as ReadPreferenceMode);
@@ -228,7 +262,7 @@ export class ReadPreference {
    * @param mode - The string representing the read preference mode.
    */
   isValid(mode?: string): boolean {
-    return ReadPreference.isValid(typeof mode === 'string' ? mode : this.mode);
+    return ReadPreference.isValid(typeof mode === "string" ? mode : this.mode);
   }
 
   /**
@@ -249,7 +283,7 @@ export class ReadPreference {
       ReadPreference.PRIMARY_PREFERRED,
       ReadPreference.SECONDARY,
       ReadPreference.SECONDARY_PREFERRED,
-      ReadPreference.NEAREST
+      ReadPreference.NEAREST,
     ]);
 
     return NEEDS_SECONDARYOK.has(this.mode);
@@ -268,7 +302,9 @@ export class ReadPreference {
   toJSON(): Document {
     const readPreference = { mode: this.mode } as Document;
     if (Array.isArray(this.tags)) readPreference.tags = this.tags;
-    if (this.maxStalenessSeconds) readPreference.maxStalenessSeconds = this.maxStalenessSeconds;
+    if (this.maxStalenessSeconds) {
+      readPreference.maxStalenessSeconds = this.maxStalenessSeconds;
+    }
     if (this.hedge) readPreference.hedge = this.hedge;
     return readPreference;
   }

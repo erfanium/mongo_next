@@ -1,13 +1,13 @@
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 
-import type { Document } from '../bson.ts';
-import type { Db } from '../db.ts';
-import { MongoInvalidArgumentError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, emitWarningOnce, getTopology } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { Db } from "../db.ts";
+import { MongoInvalidArgumentError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, emitWarningOnce, getTopology } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export interface RoleSpecification {
@@ -37,7 +37,12 @@ export class AddUserOperation extends CommandOperation<Document> {
   username: string;
   password?: string;
 
-  constructor(db: Db, username: string, password: string | undefined, options?: AddUserOptions) {
+  constructor(
+    db: Db,
+    username: string,
+    password: string | undefined,
+    options?: AddUserOptions,
+  ) {
     super(db, options);
 
     this.db = db;
@@ -49,7 +54,7 @@ export class AddUserOperation extends CommandOperation<Document> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     const db = this.db;
     const username = this.username;
@@ -60,20 +65,23 @@ export class AddUserOperation extends CommandOperation<Document> {
     if (options.digestPassword != null) {
       return callback(
         new MongoInvalidArgumentError(
-          'Option "digestPassword" not supported via addUser, use db.command(...) instead'
-        )
+          'Option "digestPassword" not supported via addUser, use db.command(...) instead',
+        ),
       );
     }
 
     let roles;
-    if (!options.roles || (Array.isArray(options.roles) && options.roles.length === 0)) {
+    if (
+      !options.roles ||
+      (Array.isArray(options.roles) && options.roles.length === 0)
+    ) {
       emitWarningOnce(
-        'Creating a user without roles is deprecated. Defaults to "root" if db is "admin" or "dbOwner" otherwise'
+        'Creating a user without roles is deprecated. Defaults to "root" if db is "admin" or "dbOwner" otherwise',
       );
-      if (db.databaseName.toLowerCase() === 'admin') {
-        roles = ['root'];
+      if (db.databaseName.toLowerCase() === "admin") {
+        roles = ["root"];
       } else {
-        roles = ['dbOwner'];
+        roles = ["dbOwner"];
       }
     } else {
       roles = Array.isArray(options.roles) ? options.roles : [options.roles];
@@ -92,10 +100,10 @@ export class AddUserOperation extends CommandOperation<Document> {
 
     if (!digestPassword) {
       // Use node md5 generator
-      const md5 = crypto.createHash('md5');
+      const md5 = crypto.createHash("md5");
       // Generate keys used for authentication
       md5.update(`${username}:mongo:${password}`);
-      userPassword = md5.digest('hex');
+      userPassword = md5.digest("hex");
     }
 
     // Build the command to execute
@@ -103,11 +111,11 @@ export class AddUserOperation extends CommandOperation<Document> {
       createUser: username,
       customData: options.customData || {},
       roles: roles,
-      digestPassword
+      digestPassword,
     };
 
     // No password
-    if (typeof password === 'string') {
+    if (typeof password === "string") {
       command.pwd = userPassword;
     }
 

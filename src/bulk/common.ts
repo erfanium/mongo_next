@@ -4,47 +4,66 @@ import {
   Long,
   ObjectId,
   resolveBSONOptions,
-  Timestamp
-} from '../bson.ts';
-import type { Collection } from '../collection.ts';
+  Timestamp,
+} from "../bson.ts";
+import type { Collection } from "../collection.ts";
 import {
   AnyError,
   MongoBatchReExecutionError,
   MONGODB_ERROR_CODES,
   MongoInvalidArgumentError,
   MongoServerError,
-  MongoWriteConcernError
-} from '../error.ts';
-import type { Filter, OneOrMore, OptionalId, UpdateFilter, WithoutId } from '../mongo_types.ts';
-import type { CollationOptions, CommandOperationOptions } from '../operations/command.ts';
-import { DeleteOperation, DeleteStatement, makeDeleteStatement } from '../operations/delete.ts';
-import { executeOperation } from '../operations/execute_operation.ts';
-import { InsertOperation } from '../operations/insert.ts';
-import { AbstractOperation, Hint } from '../operations/operation.ts';
-import { makeUpdateStatement, UpdateOperation, UpdateStatement } from '../operations/update.ts';
-import { PromiseProvider } from '../promise_provider.ts';
-import type { Server } from '../sdam/server.ts';
-import type { Topology } from '../sdam/topology.ts';
-import type { ClientSession } from '../sessions.ts';
+  MongoWriteConcernError,
+} from "../error.ts";
+import type {
+  Filter,
+  OneOrMore,
+  OptionalId,
+  UpdateFilter,
+  WithoutId,
+} from "../mongo_types.ts";
+import type {
+  CollationOptions,
+  CommandOperationOptions,
+} from "../operations/command.ts";
+import {
+  DeleteOperation,
+  DeleteStatement,
+  makeDeleteStatement,
+} from "../operations/delete.ts";
+import { executeOperation } from "../operations/execute_operation.ts";
+import { InsertOperation } from "../operations/insert.ts";
+import { AbstractOperation, Hint } from "../operations/operation.ts";
+import {
+  makeUpdateStatement,
+  UpdateOperation,
+  UpdateStatement,
+} from "../operations/update.ts";
+import { PromiseProvider } from "../promise_provider.ts";
+import type { Server } from "../sdam/server.ts";
+import type { Topology } from "../sdam/topology.ts";
+import type { ClientSession } from "../sessions.ts";
 import {
   applyRetryableWrites,
   Callback,
   getTopology,
   hasAtomicOperators,
   MongoDBNamespace,
-  resolveOptions
-} from '../utils.ts';
-import { WriteConcern } from '../write_concern.ts';
+  resolveOptions,
+} from "../utils.ts";
+import { WriteConcern } from "../write_concern.ts";
 
 /** @internal */
-const kServerError = Symbol('serverError');
+const kServerError = Symbol("serverError");
 
 /** @public */
-export const BatchType = Object.freeze({
-  INSERT: 1,
-  UPDATE: 2,
-  DELETE: 3
-} as const);
+export const BatchType = Object.freeze(
+  {
+    INSERT: 1,
+    UPDATE: 2,
+    DELETE: 3,
+  } as const,
+);
 
 /** @public */
 export type BatchType = typeof BatchType[keyof typeof BatchType];
@@ -286,7 +305,9 @@ export class BulkWriteResult {
 
   /** Returns a specific write error object */
   getWriteErrorAt(index: number): WriteError | undefined {
-    return index < this.result.writeErrors.length ? this.result.writeErrors[index] : undefined;
+    return index < this.result.writeErrors.length
+      ? this.result.writeErrors[index]
+      : undefined;
   }
 
   /** Retrieve all write errors */
@@ -308,16 +329,19 @@ export class BulkWriteResult {
       return this.result.writeConcernErrors[0];
     } else {
       // Combine the errors
-      let errmsg = '';
+      let errmsg = "";
       for (let i = 0; i < this.result.writeConcernErrors.length; i++) {
         const err = this.result.writeConcernErrors[i];
         errmsg = errmsg + err.errmsg;
 
         // TODO: Something better
-        if (i === 0) errmsg = errmsg + ' and ';
+        if (i === 0) errmsg = errmsg + " and ";
       }
 
-      return new WriteConcernError({ errmsg, code: MONGODB_ERROR_CODES.WriteConcernFailed });
+      return new WriteConcernError({
+        errmsg,
+        code: MONGODB_ERROR_CODES.WriteConcernFailed,
+      });
     }
   }
 
@@ -430,7 +454,12 @@ export class WriteError {
   }
 
   toJSON(): { code: number; index: number; errmsg?: string; op: Document } {
-    return { code: this.err.code, index: this.err.index, errmsg: this.err.errmsg, op: this.err.op };
+    return {
+      code: this.err.code,
+      index: this.err.index,
+      errmsg: this.err.errmsg,
+      op: this.err.op,
+    };
   }
 
   toString(): string {
@@ -440,7 +469,7 @@ export class WriteError {
 
 /** Converts the number to a Long or returns it. */
 function longOrConvert(value: number | Long | Timestamp): Long | Timestamp {
-  return typeof value === 'number' ? Long.fromNumber(value) : value;
+  return typeof value === "number" ? Long.fromNumber(value) : value;
 }
 
 /** Merges results into shared data structure */
@@ -448,7 +477,7 @@ export function mergeBatchResults(
   batch: Batch,
   bulkResult: BulkResult,
   err?: AnyError,
-  result?: Document
+  result?: Document,
 ): void {
   // If we have an error set the result to be the err object
   if (err) {
@@ -470,7 +499,7 @@ export function mergeBatchResults(
       code: result.code || 0,
       errmsg: result.message,
       errInfo: result.errInfo,
-      op: batch.operations[0]
+      op: batch.operations[0],
     };
 
     bulkResult.writeErrors.push(new WriteError(writeError));
@@ -493,7 +522,7 @@ export function mergeBatchResults(
     // If the opTime is a Timestamp, convert it to a consistent format to be
     // able to compare easily. Converting to the object from a timestamp is
     // much more straightforward than the other direction.
-    if (opTime._bsontype === 'Timestamp') {
+    if (opTime._bsontype === "Timestamp") {
       opTime = { ts: opTime, t: Long.ZERO };
     }
 
@@ -536,7 +565,7 @@ export function mergeBatchResults(
     for (let i = 0; i < result.upserted.length; i++) {
       bulkResult.upserted.push({
         index: result.upserted[i].index + batch.originalZeroIndex,
-        _id: result.upserted[i]._id
+        _id: result.upserted[i]._id,
       });
     }
   } else if (result.upserted) {
@@ -544,7 +573,7 @@ export function mergeBatchResults(
 
     bulkResult.upserted.push({
       index: batch.originalZeroIndex,
-      _id: result.upserted
+      _id: result.upserted,
     });
   }
 
@@ -554,7 +583,7 @@ export function mergeBatchResults(
     bulkResult.nUpserted = bulkResult.nUpserted + nUpserted;
     bulkResult.nMatched = bulkResult.nMatched + (result.n - nUpserted);
 
-    if (typeof nModified === 'number') {
+    if (typeof nModified === "number") {
       bulkResult.nModified = bulkResult.nModified + nModified;
     } else {
       bulkResult.nModified = 0;
@@ -568,7 +597,7 @@ export function mergeBatchResults(
         code: result.writeErrors[i].code,
         errmsg: result.writeErrors[i].errmsg,
         errInfo: result.writeErrors[i].errInfo,
-        op: batch.operations[result.writeErrors[i].index]
+        op: batch.operations[result.writeErrors[i].index],
       };
 
       bulkResult.writeErrors.push(new WriteError(writeError));
@@ -576,14 +605,16 @@ export function mergeBatchResults(
   }
 
   if (result.writeConcernError) {
-    bulkResult.writeConcernErrors.push(new WriteConcernError(result.writeConcernError));
+    bulkResult.writeConcernErrors.push(
+      new WriteConcernError(result.writeConcernError),
+    );
   }
 }
 
 function executeCommands(
   bulkOperation: BulkOperationBase,
   options: BulkWriteOptions,
-  callback: Callback<BulkWriteResult>
+  callback: Callback<BulkWriteResult>,
 ) {
   if (bulkOperation.s.batches.length === 0) {
     return callback(undefined, new BulkWriteResult(bulkOperation.s.bulkResult));
@@ -593,19 +624,32 @@ function executeCommands(
 
   function resultHandler(err?: AnyError, result?: Document) {
     // Error is a driver related error not a bulk op error, return early
-    if (err && 'message' in err && !(err instanceof MongoWriteConcernError)) {
+    if (err && "message" in err && !(err instanceof MongoWriteConcernError)) {
       return callback(
-        new MongoBulkWriteError(err, new BulkWriteResult(bulkOperation.s.bulkResult))
+        new MongoBulkWriteError(
+          err,
+          new BulkWriteResult(bulkOperation.s.bulkResult),
+        ),
       );
     }
 
     if (err instanceof MongoWriteConcernError) {
-      return handleMongoWriteConcernError(batch, bulkOperation.s.bulkResult, err, callback);
+      return handleMongoWriteConcernError(
+        batch,
+        bulkOperation.s.bulkResult,
+        err,
+        callback,
+      );
     }
 
     // Merge the results together
     const writeResult = new BulkWriteResult(bulkOperation.s.bulkResult);
-    const mergeResult = mergeBatchResults(batch, bulkOperation.s.bulkResult, err, result);
+    const mergeResult = mergeBatchResults(
+      batch,
+      bulkOperation.s.bulkResult,
+      err,
+      result,
+    );
     if (mergeResult != null) {
       return callback(undefined, writeResult);
     }
@@ -618,7 +662,7 @@ function executeCommands(
 
   const finalOptions = resolveOptions(bulkOperation, {
     ...options,
-    ordered: bulkOperation.isOrdered
+    ordered: bulkOperation.isOrdered,
   });
 
   if (finalOptions.bypassDocumentValidation !== true) {
@@ -642,12 +686,13 @@ function executeCommands(
 
   if (finalOptions.retryWrites) {
     if (isUpdateBatch(batch)) {
-      finalOptions.retryWrites = finalOptions.retryWrites && !batch.operations.some(op => op.multi);
+      finalOptions.retryWrites = finalOptions.retryWrites &&
+        !batch.operations.some((op) => op.multi);
     }
 
     if (isDeleteBatch(batch)) {
-      finalOptions.retryWrites =
-        finalOptions.retryWrites && !batch.operations.some(op => op.limit === 0);
+      finalOptions.retryWrites = finalOptions.retryWrites &&
+        !batch.operations.some((op) => op.limit === 0);
     }
   }
 
@@ -655,20 +700,32 @@ function executeCommands(
     if (isInsertBatch(batch)) {
       executeOperation(
         bulkOperation.s.collection,
-        new InsertOperation(bulkOperation.s.namespace, batch.operations, finalOptions),
-        resultHandler
+        new InsertOperation(
+          bulkOperation.s.namespace,
+          batch.operations,
+          finalOptions,
+        ),
+        resultHandler,
       );
     } else if (isUpdateBatch(batch)) {
       executeOperation(
         bulkOperation.s.collection,
-        new UpdateOperation(bulkOperation.s.namespace, batch.operations, finalOptions),
-        resultHandler
+        new UpdateOperation(
+          bulkOperation.s.namespace,
+          batch.operations,
+          finalOptions,
+        ),
+        resultHandler,
       );
     } else if (isDeleteBatch(batch)) {
       executeOperation(
         bulkOperation.s.collection,
-        new DeleteOperation(bulkOperation.s.namespace, batch.operations, finalOptions),
-        resultHandler
+        new DeleteOperation(
+          bulkOperation.s.namespace,
+          batch.operations,
+          finalOptions,
+        ),
+        resultHandler,
       );
     }
   } catch (err) {
@@ -684,7 +741,7 @@ function handleMongoWriteConcernError(
   batch: Batch,
   bulkResult: BulkResult,
   err: MongoWriteConcernError,
-  callback: Callback<BulkWriteResult>
+  callback: Callback<BulkWriteResult>,
 ) {
   mergeBatchResults(batch, bulkResult, undefined, err.result);
 
@@ -692,10 +749,10 @@ function handleMongoWriteConcernError(
     new MongoBulkWriteError(
       {
         message: err.result?.writeConcernError.errmsg,
-        code: err.result?.writeConcernError.result
+        code: err.result?.writeConcernError.result,
       },
-      new BulkWriteResult(bulkResult)
-    )
+      new BulkWriteResult(bulkResult),
+    ),
   );
 }
 
@@ -715,7 +772,7 @@ export class MongoBulkWriteError extends MongoServerError {
       | { message: string; code: number; writeErrors?: WriteError[] }
       | WriteConcernError
       | AnyError,
-    result: BulkWriteResult
+    result: BulkWriteResult,
   ) {
     super(error);
 
@@ -731,7 +788,7 @@ export class MongoBulkWriteError extends MongoServerError {
   }
 
   override get name(): string {
-    return 'MongoBulkWriteError';
+    return "MongoBulkWriteError";
   }
 
   /** Number of documents inserted. */
@@ -788,34 +845,44 @@ export class FindOperators {
       BatchType.UPDATE,
       makeUpdateStatement(currentOp.selector, updateDocument, {
         ...currentOp,
-        multi: true
-      })
+        multi: true,
+      }),
     );
   }
 
   /** Add a single update operation to the bulk operation */
   updateOne(updateDocument: Document): BulkOperationBase {
     if (!hasAtomicOperators(updateDocument)) {
-      throw new MongoInvalidArgumentError('Update document requires atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Update document requires atomic operators",
+      );
     }
 
     const currentOp = buildCurrentOp(this.bulkOperation);
     return this.bulkOperation.addToOperationsList(
       BatchType.UPDATE,
-      makeUpdateStatement(currentOp.selector, updateDocument, { ...currentOp, multi: false })
+      makeUpdateStatement(currentOp.selector, updateDocument, {
+        ...currentOp,
+        multi: false,
+      }),
     );
   }
 
   /** Add a replace one operation to the bulk operation */
   replaceOne(replacement: Document): BulkOperationBase {
     if (hasAtomicOperators(replacement)) {
-      throw new MongoInvalidArgumentError('Replacement document must not use atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Replacement document must not use atomic operators",
+      );
     }
 
     const currentOp = buildCurrentOp(this.bulkOperation);
     return this.bulkOperation.addToOperationsList(
       BatchType.UPDATE,
-      makeUpdateStatement(currentOp.selector, replacement, { ...currentOp, multi: false })
+      makeUpdateStatement(currentOp.selector, replacement, {
+        ...currentOp,
+        multi: false,
+      }),
     );
   }
 
@@ -824,7 +891,7 @@ export class FindOperators {
     const currentOp = buildCurrentOp(this.bulkOperation);
     return this.bulkOperation.addToOperationsList(
       BatchType.DELETE,
-      makeDeleteStatement(currentOp.selector, { ...currentOp, limit: 1 })
+      makeDeleteStatement(currentOp.selector, { ...currentOp, limit: 1 }),
     );
   }
 
@@ -833,7 +900,7 @@ export class FindOperators {
     const currentOp = buildCurrentOp(this.bulkOperation);
     return this.bulkOperation.addToOperationsList(
       BatchType.DELETE,
-      makeDeleteStatement(currentOp.selector, { ...currentOp, limit: 0 })
+      makeDeleteStatement(currentOp.selector, { ...currentOp, limit: 0 }),
     );
   }
 
@@ -936,7 +1003,11 @@ class BulkWriteShimOperation extends AbstractOperation {
     this.bulkOperation = bulkOperation;
   }
 
-  execute(server: Server, session: ClientSession | undefined, callback: Callback<any>): void {
+  execute(
+    server: Server,
+    session: ClientSession | undefined,
+    callback: Callback<any>,
+  ): void {
     if (this.options.session == null) {
       // An implicit session could have been created by 'executeOperation'
       // So if we stick it on finalOptions here, each bulk operation
@@ -959,7 +1030,11 @@ export abstract class BulkOperationBase {
    * Create a new OrderedBulkOperation or UnorderedBulkOperation instance
    * @internal
    */
-  constructor(collection: Collection, options: BulkWriteOptions, isOrdered: boolean) {
+  constructor(
+    collection: Collection,
+    options: BulkWriteOptions,
+    isOrdered: boolean,
+  ) {
     // determine whether bulkOperation is ordered or unordered
     this.isOrdered = isOrdered;
 
@@ -979,11 +1054,17 @@ export abstract class BulkOperationBase {
 
     // If we have autoEncryption on, batch-splitting must be done on 2mb chunks, but single documents
     // over 2mb are still allowed
-    const usingAutoEncryption = !!(topology.s.options && topology.s.options.autoEncrypter);
-    const maxBsonObjectSize =
-      hello && hello.maxBsonObjectSize ? hello.maxBsonObjectSize : 1024 * 1024 * 16;
-    const maxBatchSizeBytes = usingAutoEncryption ? 1024 * 1024 * 2 : maxBsonObjectSize;
-    const maxWriteBatchSize = hello && hello.maxWriteBatchSize ? hello.maxWriteBatchSize : 1000;
+    const usingAutoEncryption =
+      !!(topology.s.options && topology.s.options.autoEncrypter);
+    const maxBsonObjectSize = hello && hello.maxBsonObjectSize
+      ? hello.maxBsonObjectSize
+      : 1024 * 1024 * 16;
+    const maxBatchSizeBytes = usingAutoEncryption
+      ? 1024 * 1024 * 2
+      : maxBsonObjectSize;
+    const maxWriteBatchSize = hello && hello.maxWriteBatchSize
+      ? hello.maxWriteBatchSize
+      : 1000;
 
     // Calculates the largest possible size of an Array key, represented as a BSON string
     // element. This calculation:
@@ -1007,7 +1088,7 @@ export abstract class BulkOperationBase {
       nMatched: 0,
       nModified: 0,
       nRemoved: 0,
-      upserted: []
+      upserted: [],
     };
 
     // Internal state
@@ -1049,7 +1130,9 @@ export abstract class BulkOperationBase {
       // Fundamental error
       err: undefined,
       // check keys
-      checkKeys: typeof options.checkKeys === 'boolean' ? options.checkKeys : false
+      checkKeys: typeof options.checkKeys === "boolean"
+        ? options.checkKeys
+        : false,
     };
 
     // bypass Validation
@@ -1118,12 +1201,14 @@ export abstract class BulkOperationBase {
    */
   find(selector: Document): FindOperators {
     if (!selector) {
-      throw new MongoInvalidArgumentError('Bulk find operation must specify a selector');
+      throw new MongoInvalidArgumentError(
+        "Bulk find operation must specify a selector",
+      );
     }
 
     // Save a current selector
     this.s.currentOp = {
-      selector: selector
+      selector: selector,
     };
 
     return new FindOperators(this);
@@ -1131,11 +1216,13 @@ export abstract class BulkOperationBase {
 
   /** Specifies a raw operation to perform in the bulk write. */
   raw(op: AnyBulkWriteOperation): this {
-    if ('insertOne' in op) {
+    if ("insertOne" in op) {
       const forceServerObjectId = shouldForceServerObjectId(this);
       if (op.insertOne && op.insertOne.document == null) {
         // NOTE: provided for legacy support, but this is a malformed operation
-        if (forceServerObjectId !== true && (op.insertOne as Document)._id == null) {
+        if (
+          forceServerObjectId !== true && (op.insertOne as Document)._id == null
+        ) {
           (op.insertOne as Document)._id = new ObjectId();
         }
 
@@ -1149,74 +1236,91 @@ export abstract class BulkOperationBase {
       return this.addToOperationsList(BatchType.INSERT, op.insertOne.document);
     }
 
-    if ('replaceOne' in op || 'updateOne' in op || 'updateMany' in op) {
-      if ('replaceOne' in op) {
-        if ('q' in op.replaceOne) {
-          throw new MongoInvalidArgumentError('Raw operations are not allowed');
+    if ("replaceOne" in op || "updateOne" in op || "updateMany" in op) {
+      if ("replaceOne" in op) {
+        if ("q" in op.replaceOne) {
+          throw new MongoInvalidArgumentError("Raw operations are not allowed");
         }
         const updateStatement = makeUpdateStatement(
           op.replaceOne.filter,
           op.replaceOne.replacement,
-          { ...op.replaceOne, multi: false }
+          { ...op.replaceOne, multi: false },
         );
         if (hasAtomicOperators(updateStatement.u)) {
-          throw new MongoInvalidArgumentError('Replacement document must not use atomic operators');
+          throw new MongoInvalidArgumentError(
+            "Replacement document must not use atomic operators",
+          );
         }
         return this.addToOperationsList(BatchType.UPDATE, updateStatement);
       }
 
-      if ('updateOne' in op) {
-        if ('q' in op.updateOne) {
-          throw new MongoInvalidArgumentError('Raw operations are not allowed');
+      if ("updateOne" in op) {
+        if ("q" in op.updateOne) {
+          throw new MongoInvalidArgumentError("Raw operations are not allowed");
         }
-        const updateStatement = makeUpdateStatement(op.updateOne.filter, op.updateOne.update, {
-          ...op.updateOne,
-          multi: false
-        });
+        const updateStatement = makeUpdateStatement(
+          op.updateOne.filter,
+          op.updateOne.update,
+          {
+            ...op.updateOne,
+            multi: false,
+          },
+        );
         if (!hasAtomicOperators(updateStatement.u)) {
-          throw new MongoInvalidArgumentError('Update document requires atomic operators');
+          throw new MongoInvalidArgumentError(
+            "Update document requires atomic operators",
+          );
         }
         return this.addToOperationsList(BatchType.UPDATE, updateStatement);
       }
 
-      if ('updateMany' in op) {
-        if ('q' in op.updateMany) {
-          throw new MongoInvalidArgumentError('Raw operations are not allowed');
+      if ("updateMany" in op) {
+        if ("q" in op.updateMany) {
+          throw new MongoInvalidArgumentError("Raw operations are not allowed");
         }
-        const updateStatement = makeUpdateStatement(op.updateMany.filter, op.updateMany.update, {
-          ...op.updateMany,
-          multi: true
-        });
+        const updateStatement = makeUpdateStatement(
+          op.updateMany.filter,
+          op.updateMany.update,
+          {
+            ...op.updateMany,
+            multi: true,
+          },
+        );
         if (!hasAtomicOperators(updateStatement.u)) {
-          throw new MongoInvalidArgumentError('Update document requires atomic operators');
+          throw new MongoInvalidArgumentError(
+            "Update document requires atomic operators",
+          );
         }
         return this.addToOperationsList(BatchType.UPDATE, updateStatement);
       }
     }
 
-    if ('deleteOne' in op) {
-      if ('q' in op.deleteOne) {
-        throw new MongoInvalidArgumentError('Raw operations are not allowed');
+    if ("deleteOne" in op) {
+      if ("q" in op.deleteOne) {
+        throw new MongoInvalidArgumentError("Raw operations are not allowed");
       }
       return this.addToOperationsList(
         BatchType.DELETE,
-        makeDeleteStatement(op.deleteOne.filter, { ...op.deleteOne, limit: 1 })
+        makeDeleteStatement(op.deleteOne.filter, { ...op.deleteOne, limit: 1 }),
       );
     }
 
-    if ('deleteMany' in op) {
-      if ('q' in op.deleteMany) {
-        throw new MongoInvalidArgumentError('Raw operations are not allowed');
+    if ("deleteMany" in op) {
+      if ("q" in op.deleteMany) {
+        throw new MongoInvalidArgumentError("Raw operations are not allowed");
       }
       return this.addToOperationsList(
         BatchType.DELETE,
-        makeDeleteStatement(op.deleteMany.filter, { ...op.deleteMany, limit: 0 })
+        makeDeleteStatement(op.deleteMany.filter, {
+          ...op.deleteMany,
+          limit: 0,
+        }),
       );
     }
 
     // otherwise an unknown operation was provided
     throw new MongoInvalidArgumentError(
-      'bulkWrite only supports insertOne, updateOne, updateMany, deleteOne, deleteMany'
+      "bulkWrite only supports insertOne, updateOne, updateMany, deleteOne, deleteMany",
     );
   }
 
@@ -1242,16 +1346,19 @@ export abstract class BulkOperationBase {
 
   execute(options?: BulkWriteOptions): Promise<BulkWriteResult>;
   execute(callback: Callback<BulkWriteResult>): void;
-  execute(options: BulkWriteOptions | undefined, callback: Callback<BulkWriteResult>): void;
+  execute(
+    options: BulkWriteOptions | undefined,
+    callback: Callback<BulkWriteResult>,
+  ): void;
   execute(
     options?: BulkWriteOptions | Callback<BulkWriteResult>,
-    callback?: Callback<BulkWriteResult>
+    callback?: Callback<BulkWriteResult>,
   ): Promise<BulkWriteResult> | void;
   execute(
     options?: BulkWriteOptions | Callback<BulkWriteResult>,
-    callback?: Callback<BulkWriteResult>
+    callback?: Callback<BulkWriteResult>,
   ): Promise<BulkWriteResult> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     if (this.s.executed) {
@@ -1267,14 +1374,20 @@ export abstract class BulkOperationBase {
     if (this.isOrdered) {
       if (this.s.currentBatch) this.s.batches.push(this.s.currentBatch);
     } else {
-      if (this.s.currentInsertBatch) this.s.batches.push(this.s.currentInsertBatch);
-      if (this.s.currentUpdateBatch) this.s.batches.push(this.s.currentUpdateBatch);
-      if (this.s.currentRemoveBatch) this.s.batches.push(this.s.currentRemoveBatch);
+      if (this.s.currentInsertBatch) {
+        this.s.batches.push(this.s.currentInsertBatch);
+      }
+      if (this.s.currentUpdateBatch) {
+        this.s.batches.push(this.s.currentUpdateBatch);
+      }
+      if (this.s.currentRemoveBatch) {
+        this.s.batches.push(this.s.currentRemoveBatch);
+      }
     }
     // If we have no operations in the bulk raise an error
     if (this.s.batches.length === 0) {
       const emptyBatchError = new MongoInvalidArgumentError(
-        'Invalid BulkOperation, Batch cannot be empty'
+        "Invalid BulkOperation, Batch cannot be empty",
       );
       return handleEarlyError(emptyBatchError, callback);
     }
@@ -1290,21 +1403,24 @@ export abstract class BulkOperationBase {
    * Handles the write error before executing commands
    * @internal
    */
-  handleWriteError(callback: Callback<BulkWriteResult>, writeResult: BulkWriteResult): boolean {
+  handleWriteError(
+    callback: Callback<BulkWriteResult>,
+    writeResult: BulkWriteResult,
+  ): boolean {
     if (this.s.bulkResult.writeErrors.length > 0) {
       const msg = this.s.bulkResult.writeErrors[0].errmsg
         ? this.s.bulkResult.writeErrors[0].errmsg
-        : 'write operation failed';
+        : "write operation failed";
 
       callback(
         new MongoBulkWriteError(
           {
             message: msg,
             code: this.s.bulkResult.writeErrors[0].code,
-            writeErrors: this.s.bulkResult.writeErrors
+            writeErrors: this.s.bulkResult.writeErrors,
           },
-          writeResult
-        )
+          writeResult,
+        ),
       );
 
       return true;
@@ -1321,24 +1437,24 @@ export abstract class BulkOperationBase {
 
   abstract addToOperationsList(
     batchType: BatchType,
-    document: Document | UpdateStatement | DeleteStatement
+    document: Document | UpdateStatement | DeleteStatement,
   ): this;
 }
 
-Object.defineProperty(BulkOperationBase.prototype, 'length', {
+Object.defineProperty(BulkOperationBase.prototype, "length", {
   enumerable: true,
   get() {
     return this.s.currentIndex;
-  }
+  },
 });
 
 /** helper function to assist with promiseOrCallback behavior */
 function handleEarlyError(
   err?: AnyError,
-  callback?: Callback<BulkWriteResult>
+  callback?: Callback<BulkWriteResult>,
 ): Promise<BulkWriteResult> | void {
   const Promise = PromiseProvider.get();
-  if (typeof callback === 'function') {
+  if (typeof callback === "function") {
     callback(err);
     return;
   }
@@ -1347,11 +1463,14 @@ function handleEarlyError(
 }
 
 function shouldForceServerObjectId(bulkOperation: BulkOperationBase): boolean {
-  if (typeof bulkOperation.s.options.forceServerObjectId === 'boolean') {
+  if (typeof bulkOperation.s.options.forceServerObjectId === "boolean") {
     return bulkOperation.s.options.forceServerObjectId;
   }
 
-  if (typeof bulkOperation.s.collection.s.db.options?.forceServerObjectId === 'boolean') {
+  if (
+    typeof bulkOperation.s.collection.s.db.options?.forceServerObjectId ===
+      "boolean"
+  ) {
     return bulkOperation.s.collection.s.db.options?.forceServerObjectId;
   }
 

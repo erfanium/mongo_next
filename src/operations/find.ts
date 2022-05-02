@@ -1,27 +1,35 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoCompatibilityError, MongoInvalidArgumentError } from '../error.ts';
-import { ReadConcern } from '../read_concern.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { formatSort, Sort } from '../sort.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import {
+  MongoCompatibilityError,
+  MongoInvalidArgumentError,
+} from "../error.ts";
+import { ReadConcern } from "../read_concern.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { formatSort, Sort } from "../sort.ts";
 import {
   Callback,
   decorateWithExplain,
   maxWireVersion,
   MongoDBNamespace,
-  normalizeHintField
-} from '../utils.ts';
-import { CollationOptions, CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects, Hint } from './operation.ts';
-import { Buffer } from 'buffer';
+  normalizeHintField,
+} from "../utils.ts";
+import {
+  CollationOptions,
+  CommandOperation,
+  CommandOperationOptions,
+} from "./command.ts";
+import { Aspect, defineAspects, Hint } from "./operation.ts";
+import { Buffer } from "../../deps.ts";
 
 /**
  * @public
  * @typeParam TSchema - Unused schema definition, deprecated usage, only specify `FindOptions` with no generic
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface FindOptions<TSchema extends Document = Document> extends CommandOperationOptions {
+export interface FindOptions<TSchema extends Document = Document>
+  extends CommandOperationOptions {
   /** Sets the limit of documents returned in the query. */
   limit?: number;
   /** Set to sort the documents coming back from the query. Array of indexes, `[['a', 1]]` etc. */
@@ -77,35 +85,40 @@ export class FindOperation extends CommandOperation<Document> {
     collection: Collection | undefined,
     ns: MongoDBNamespace,
     filter: Document = {},
-    options: FindOptions = {}
+    options: FindOptions = {},
   ) {
     super(collection, options);
 
     this.options = options;
     this.ns = ns;
 
-    if (typeof filter !== 'object' || Array.isArray(filter)) {
-      throw new MongoInvalidArgumentError('Query filter must be a plain object or ObjectId');
+    if (typeof filter !== "object" || Array.isArray(filter)) {
+      throw new MongoInvalidArgumentError(
+        "Query filter must be a plain object or ObjectId",
+      );
     }
 
     // If the filter is a buffer, validate that is a valid BSON document
     if (Buffer.isBuffer(filter)) {
-      const objectSize = filter[0] | (filter[1] << 8) | (filter[2] << 16) | (filter[3] << 24);
+      const objectSize = filter[0] | (filter[1] << 8) | (filter[2] << 16) |
+        (filter[3] << 24);
       if (objectSize !== filter.length) {
         throw new MongoInvalidArgumentError(
-          `Query filter raw message size does not match message header size [${filter.length}] != [${objectSize}]`
+          `Query filter raw message size does not match message header size [${filter.length}] != [${objectSize}]`,
         );
       }
     }
 
     // special case passing in an ObjectId as a filter
-    this.filter = filter != null && filter._bsontype === 'ObjectID' ? { _id: filter } : filter;
+    this.filter = filter != null && filter._bsontype === "ObjectID"
+      ? { _id: filter }
+      : filter;
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     this.server = server;
 
@@ -113,16 +126,21 @@ export class FindOperation extends CommandOperation<Document> {
     const options = this.options;
     if (options.allowDiskUse != null && serverWireVersion < 4) {
       callback(
-        new MongoCompatibilityError('Option "allowDiskUse" is not supported on MongoDB < 3.2')
+        new MongoCompatibilityError(
+          'Option "allowDiskUse" is not supported on MongoDB < 3.2',
+        ),
       );
       return;
     }
 
-    if (options.collation && serverWireVersion < SUPPORTS_WRITE_CONCERN_AND_COLLATION) {
+    if (
+      options.collation &&
+      serverWireVersion < SUPPORTS_WRITE_CONCERN_AND_COLLATION
+    ) {
       callback(
         new MongoCompatibilityError(
-          `Server ${server.name}, which reports wire version ${serverWireVersion}, does not support collation`
-        )
+          `Server ${server.name}, which reports wire version ${serverWireVersion}, does not support collation`,
+        ),
       );
 
       return;
@@ -139,18 +157,22 @@ export class FindOperation extends CommandOperation<Document> {
       {
         ...this.options,
         ...this.bsonOptions,
-        documentsReturnedIn: 'firstBatch',
-        session
+        documentsReturnedIn: "firstBatch",
+        session,
       },
-      callback
+      callback,
     );
   }
 }
 
-function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOptions): Document {
+function makeFindCommand(
+  ns: MongoDBNamespace,
+  filter: Document,
+  options: FindOptions,
+): Document {
   const findCommand: Document = {
     find: ns.collection,
-    filter
+    filter,
   };
 
   if (options.sort) {
@@ -162,9 +184,9 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     if (projection && Array.isArray(projection)) {
       projection = projection.length
         ? projection.reduce((result, field) => {
-            result[field] = 1;
-            return result;
-          }, {})
+          result[field] = 1;
+          return result;
+        }, {})
         : { _id: 1 };
     }
 
@@ -175,11 +197,11 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     findCommand.hint = normalizeHintField(options.hint);
   }
 
-  if (typeof options.skip === 'number') {
+  if (typeof options.skip === "number") {
     findCommand.skip = options.skip;
   }
 
-  if (typeof options.limit === 'number') {
+  if (typeof options.limit === "number") {
     if (options.limit < 0) {
       findCommand.limit = -options.limit;
       findCommand.singleBatch = true;
@@ -188,7 +210,7 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     }
   }
 
-  if (typeof options.batchSize === 'number') {
+  if (typeof options.batchSize === "number") {
     if (options.batchSize < 0) {
       if (
         options.limit &&
@@ -204,7 +226,7 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     }
   }
 
-  if (typeof options.singleBatch === 'boolean') {
+  if (typeof options.singleBatch === "boolean") {
     findCommand.singleBatch = options.singleBatch;
   }
 
@@ -214,7 +236,7 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     findCommand.comment = options.comment;
   }
 
-  if (typeof options.maxTimeMS === 'number') {
+  if (typeof options.maxTimeMS === "number") {
     findCommand.maxTimeMS = options.maxTimeMS;
   }
 
@@ -231,29 +253,29 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     findCommand.min = options.min;
   }
 
-  if (typeof options.returnKey === 'boolean') {
+  if (typeof options.returnKey === "boolean") {
     findCommand.returnKey = options.returnKey;
   }
 
-  if (typeof options.showRecordId === 'boolean') {
+  if (typeof options.showRecordId === "boolean") {
     findCommand.showRecordId = options.showRecordId;
   }
 
-  if (typeof options.tailable === 'boolean') {
+  if (typeof options.tailable === "boolean") {
     findCommand.tailable = options.tailable;
   }
 
-  if (typeof options.timeout === 'boolean') {
+  if (typeof options.timeout === "boolean") {
     findCommand.noCursorTimeout = !options.timeout;
-  } else if (typeof options.noCursorTimeout === 'boolean') {
+  } else if (typeof options.noCursorTimeout === "boolean") {
     findCommand.noCursorTimeout = options.noCursorTimeout;
   }
 
-  if (typeof options.awaitData === 'boolean') {
+  if (typeof options.awaitData === "boolean") {
     findCommand.awaitData = options.awaitData;
   }
 
-  if (typeof options.allowPartialResults === 'boolean') {
+  if (typeof options.allowPartialResults === "boolean") {
     findCommand.allowPartialResults = options.allowPartialResults;
   }
 
@@ -261,7 +283,7 @@ function makeFindCommand(ns: MongoDBNamespace, filter: Document, options: FindOp
     findCommand.collation = options.collation;
   }
 
-  if (typeof options.allowDiskUse === 'boolean') {
+  if (typeof options.allowDiskUse === "boolean") {
     findCommand.allowDiskUse = options.allowDiskUse;
   }
 
@@ -276,5 +298,5 @@ defineAspects(FindOperation, [
   Aspect.READ_OPERATION,
   Aspect.RETRYABLE,
   Aspect.EXPLAINABLE,
-  Aspect.CURSOR_CREATING
+  Aspect.CURSOR_CREATING,
 ]);

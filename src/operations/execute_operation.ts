@@ -1,4 +1,4 @@
-import type { Document } from '../bson.ts';
+import type { Document } from "../bson.ts";
 import {
   isRetryableReadError,
   isRetryableWriteError,
@@ -10,32 +10,32 @@ import {
   MongoRuntimeError,
   MongoServerError,
   MongoTransactionError,
-  MongoUnexpectedServerResponseError
-} from '../error.ts';
-import { ReadPreference } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
+  MongoUnexpectedServerResponseError,
+} from "../error.ts";
+import { ReadPreference } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
 import {
   sameServerSelector,
   secondaryWritableServerSelector,
-  ServerSelector
-} from '../sdam/server_selection.ts';
-import type { Topology } from '../sdam/topology.ts';
-import type { ClientSession } from '../sessions.ts';
+  ServerSelector,
+} from "../sdam/server_selection.ts";
+import type { Topology } from "../sdam/topology.ts";
+import type { ClientSession } from "../sessions.ts";
 import {
   Callback,
   getTopology,
   maybePromise,
   supportsRetryableWrites,
-  TopologyProvider
-} from '../utils.ts';
-import { AbstractOperation, Aspect } from './operation.ts';
+  TopologyProvider,
+} from "../utils.ts";
+import { AbstractOperation, Aspect } from "./operation.ts";
 
 const MMAPv1_RETRY_WRITES_ERROR_CODE = MONGODB_ERROR_CODES.IllegalOperation;
 const MMAPv1_RETRY_WRITES_ERROR_MESSAGE =
-  'This MongoDB deployment does not support retryable writes. Please add retryWrites=false to your connection string.';
+  "This MongoDB deployment does not support retryable writes. Please add retryWrites=false to your connection string.";
 
-type ResultTypeFromOperation<TOperation> = TOperation extends AbstractOperation<infer K>
-  ? K
+type ResultTypeFromOperation<TOperation> = TOperation extends
+  AbstractOperation<infer K> ? K
   : never;
 
 /** @internal */
@@ -65,34 +65,40 @@ export interface ExecutionResult {
  */
 export function executeOperation<
   T extends AbstractOperation<TResult>,
-  TResult = ResultTypeFromOperation<T>
+  TResult = ResultTypeFromOperation<T>,
 >(topologyProvider: TopologyProvider, operation: T): Promise<TResult>;
 export function executeOperation<
   T extends AbstractOperation<TResult>,
-  TResult = ResultTypeFromOperation<T>
->(topologyProvider: TopologyProvider, operation: T, callback: Callback<TResult>): void;
-export function executeOperation<
-  T extends AbstractOperation<TResult>,
-  TResult = ResultTypeFromOperation<T>
+  TResult = ResultTypeFromOperation<T>,
 >(
   topologyProvider: TopologyProvider,
   operation: T,
-  callback?: Callback<TResult>
+  callback: Callback<TResult>,
+): void;
+export function executeOperation<
+  T extends AbstractOperation<TResult>,
+  TResult = ResultTypeFromOperation<T>,
+>(
+  topologyProvider: TopologyProvider,
+  operation: T,
+  callback?: Callback<TResult>,
 ): Promise<TResult> | void;
 export function executeOperation<
   T extends AbstractOperation<TResult>,
-  TResult = ResultTypeFromOperation<T>
+  TResult = ResultTypeFromOperation<T>,
 >(
   topologyProvider: TopologyProvider,
   operation: T,
-  callback?: Callback<TResult>
+  callback?: Callback<TResult>,
 ): Promise<TResult> | void {
   if (!(operation instanceof AbstractOperation)) {
     // TODO(NODE-3483): Extend MongoRuntimeError
-    throw new MongoRuntimeError('This method requires a valid operation instance');
+    throw new MongoRuntimeError(
+      "This method requires a valid operation instance",
+    );
   }
 
-  return maybePromise(callback, callback => {
+  return maybePromise(callback, (callback) => {
     let topology: Topology;
     try {
       // TODO(NODE-4151): Use skipPingOnConnect and call connect here to make client.connect optional
@@ -101,11 +107,15 @@ export function executeOperation<
       return callback(error);
     }
     if (topology.shouldCheckForSessionSupport()) {
-      return topology.selectServer(ReadPreference.primaryPreferred, {}, err => {
-        if (err) return callback(err);
+      return topology.selectServer(
+        ReadPreference.primaryPreferred,
+        {},
+        (err) => {
+          if (err) return callback(err);
 
-        executeOperation<T, TResult>(topologyProvider, operation, callback);
-      });
+          executeOperation<T, TResult>(topologyProvider, operation, callback);
+        },
+      );
     }
 
     // The driver sessions spec mandates that we implicitly create sessions for operations
@@ -117,24 +127,45 @@ export function executeOperation<
         owner = Symbol();
         session = topology.startSession({ owner, explicit: false });
       } else if (session.hasEnded) {
-        return callback(new MongoExpiredSessionError('Use of expired sessions is not permitted'));
-      } else if (session.snapshotEnabled && !topology.capabilities.supportsSnapshotReads) {
-        return callback(new MongoCompatibilityError('Snapshot reads require MongoDB 5.0 or later'));
+        return callback(
+          new MongoExpiredSessionError(
+            "Use of expired sessions is not permitted",
+          ),
+        );
+      } else if (
+        session.snapshotEnabled && !topology.capabilities.supportsSnapshotReads
+      ) {
+        return callback(
+          new MongoCompatibilityError(
+            "Snapshot reads require MongoDB 5.0 or later",
+          ),
+        );
       }
     } else if (session) {
       // If the user passed an explicit session and we are still, after server selection,
       // trying to run against a topology that doesn't support sessions we error out.
-      return callback(new MongoCompatibilityError('Current topology does not support sessions'));
+      return callback(
+        new MongoCompatibilityError(
+          "Current topology does not support sessions",
+        ),
+      );
     }
 
     try {
-      executeWithServerSelection<TResult>(topology, session, operation, (error, result) => {
-        if (session?.owner != null && session.owner === owner) {
-          return session.endSession(endSessionError => callback(endSessionError ?? error, result));
-        }
+      executeWithServerSelection<TResult>(
+        topology,
+        session,
+        operation,
+        (error, result) => {
+          if (session?.owner != null && session.owner === owner) {
+            return session.endSession((endSessionError) =>
+              callback(endSessionError ?? error, result)
+            );
+          }
 
-        callback(error, result);
-      });
+          callback(error, result);
+        },
+      );
     } catch (error) {
       if (session?.owner != null && session.owner === owner) {
         session.endSession();
@@ -148,7 +179,7 @@ function executeWithServerSelection<TResult>(
   topology: Topology,
   session: ClientSession | undefined,
   operation: AbstractOperation,
-  callback: Callback<TResult>
+  callback: Callback<TResult>,
 ) {
   const readPreference = operation.readPreference ?? ReadPreference.primary;
   const inTransaction = !!session?.inTransaction();
@@ -156,12 +187,15 @@ function executeWithServerSelection<TResult>(
   if (inTransaction && !readPreference.equals(ReadPreference.primary)) {
     return callback(
       new MongoTransactionError(
-        `Read preference in a transaction must be primary, not: ${readPreference.mode}`
-      )
+        `Read preference in a transaction must be primary, not: ${readPreference.mode}`,
+      ),
     );
   }
 
-  if (session?.isPinned && session.transaction.isCommitted && !operation.bypassPinningCheck) {
+  if (
+    session?.isPinned && session.transaction.isCommitted &&
+    !operation.bypassPinningCheck
+  ) {
     session.unpin();
   }
 
@@ -175,7 +209,10 @@ function executeWithServerSelection<TResult>(
   } else if (operation.trySecondaryWrite) {
     // If operation should try to write to secondary use the custom server selector
     // otherwise provide the read preference.
-    selector = secondaryWritableServerSelector(topology.commonWireVersion, readPreference);
+    selector = secondaryWritableServerSelector(
+      topology.commonWireVersion,
+      readPreference,
+    );
   } else {
     selector = readPreference;
   }
@@ -185,13 +222,15 @@ function executeWithServerSelection<TResult>(
     const isWriteOperation = operation.hasAspect(Aspect.WRITE_OPERATION);
     const isReadOperation = operation.hasAspect(Aspect.READ_OPERATION);
 
-    if (isWriteOperation && originalError.code === MMAPv1_RETRY_WRITES_ERROR_CODE) {
+    if (
+      isWriteOperation && originalError.code === MMAPv1_RETRY_WRITES_ERROR_CODE
+    ) {
       return callback(
         new MongoServerError({
           message: MMAPv1_RETRY_WRITES_ERROR_MESSAGE,
           errmsg: MMAPv1_RETRY_WRITES_ERROR_MESSAGE,
-          originalError
-        })
+          originalError,
+        }),
       );
     }
 
@@ -216,23 +255,30 @@ function executeWithServerSelection<TResult>(
     }
 
     // select a new server, and attempt to retry the operation
-    topology.selectServer(selector, serverSelectionOptions, (error?: Error, server?: Server) => {
-      if (!error && isWriteOperation && !supportsRetryableWrites(server)) {
-        return callback(
-          new MongoUnexpectedServerResponseError(
-            'Selected server does not support retryable writes'
-          )
-        );
-      }
+    topology.selectServer(
+      selector,
+      serverSelectionOptions,
+      (error?: Error, server?: Server) => {
+        if (!error && isWriteOperation && !supportsRetryableWrites(server)) {
+          return callback(
+            new MongoUnexpectedServerResponseError(
+              "Selected server does not support retryable writes",
+            ),
+          );
+        }
 
-      if (error || !server) {
-        return callback(
-          error ?? new MongoUnexpectedServerResponseError('Server selection failed without error')
-        );
-      }
+        if (error || !server) {
+          return callback(
+            error ??
+              new MongoUnexpectedServerResponseError(
+                "Server selection failed without error",
+              ),
+          );
+        }
 
-      operation.execute(server, session, callback);
-    });
+        operation.execute(server, session, callback);
+      },
+    );
   }
 
   if (
@@ -242,8 +288,8 @@ function executeWithServerSelection<TResult>(
   ) {
     callback(
       new MongoTransactionError(
-        `Read preference in a transaction must be primary, not: ${readPreference.mode}`
-      )
+        `Read preference in a transaction must be primary, not: ${readPreference.mode}`,
+      ),
     );
 
     return;
@@ -256,11 +302,10 @@ function executeWithServerSelection<TResult>(
     }
 
     if (session && operation.hasAspect(Aspect.RETRYABLE)) {
-      const willRetryRead =
-        topology.s.options.retryReads && !inTransaction && operation.canRetryRead;
+      const willRetryRead = topology.s.options.retryReads && !inTransaction &&
+        operation.canRetryRead;
 
-      const willRetryWrite =
-        topology.s.options.retryWrites &&
+      const willRetryWrite = topology.s.options.retryWrites &&
         !inTransaction &&
         supportsRetryableWrites(server) &&
         operation.canRetryWrite;
@@ -268,7 +313,9 @@ function executeWithServerSelection<TResult>(
       const hasReadAspect = operation.hasAspect(Aspect.READ_OPERATION);
       const hasWriteAspect = operation.hasAspect(Aspect.WRITE_OPERATION);
 
-      if ((hasReadAspect && willRetryRead) || (hasWriteAspect && willRetryWrite)) {
+      if (
+        (hasReadAspect && willRetryRead) || (hasWriteAspect && willRetryWrite)
+      ) {
         if (hasWriteAspect && willRetryWrite) {
           operation.options.willRetryWrite = true;
           session.incrementTransactionNumber();

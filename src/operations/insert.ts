@@ -1,23 +1,27 @@
-import type { Document } from '../bson.ts';
-import type { BulkWriteOptions } from '../bulk/common.ts';
-import type { Collection } from '../collection.ts';
-import { MongoInvalidArgumentError, MongoServerError } from '../error.ts';
-import type { InferIdType } from '../mongo_types.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback, MongoDBNamespace } from '../utils.ts';
-import { WriteConcern } from '../write_concern.ts';
-import { BulkWriteOperation } from './bulk_write.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { prepareDocs } from './common_functions.ts';
-import { AbstractOperation, Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { BulkWriteOptions } from "../bulk/common.ts";
+import type { Collection } from "../collection.ts";
+import { MongoInvalidArgumentError, MongoServerError } from "../error.ts";
+import type { InferIdType } from "../mongo_types.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback, MongoDBNamespace } from "../utils.ts";
+import { WriteConcern } from "../write_concern.ts";
+import { BulkWriteOperation } from "./bulk_write.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { prepareDocs } from "./common_functions.ts";
+import { AbstractOperation, Aspect, defineAspects } from "./operation.ts";
 
 /** @internal */
 export class InsertOperation extends CommandOperation<Document> {
   override options: BulkWriteOptions;
   documents: Document[];
 
-  constructor(ns: MongoDBNamespace, documents: Document[], options: BulkWriteOptions) {
+  constructor(
+    ns: MongoDBNamespace,
+    documents: Document[],
+    options: BulkWriteOptions,
+  ) {
     super(undefined, options);
     this.options = { ...options, checkKeys: options.checkKeys ?? false };
     this.ns = ns;
@@ -27,17 +31,19 @@ export class InsertOperation extends CommandOperation<Document> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     const options = this.options ?? {};
-    const ordered = typeof options.ordered === 'boolean' ? options.ordered : true;
+    const ordered = typeof options.ordered === "boolean"
+      ? options.ordered
+      : true;
     const command: Document = {
       insert: this.ns.collection,
       documents: this.documents,
-      ordered
+      ordered,
     };
 
-    if (typeof options.bypassDocumentValidation === 'boolean') {
+    if (typeof options.bypassDocumentValidation === "boolean") {
       command.bypassDocumentValidation = options.bypassDocumentValidation;
     }
 
@@ -68,14 +74,22 @@ export interface InsertOneResult<TSchema = Document> {
 }
 
 export class InsertOneOperation extends InsertOperation {
-  constructor(collection: Collection, doc: Document, options: InsertOneOptions) {
-    super(collection.s.namespace, prepareDocs(collection, [doc], options), options);
+  constructor(
+    collection: Collection,
+    doc: Document,
+    options: InsertOneOptions,
+  ) {
+    super(
+      collection.s.namespace,
+      prepareDocs(collection, [doc], options),
+      options,
+    );
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<InsertOneResult>
+    callback: Callback<InsertOneResult>,
   ): void {
     super.execute(server, session, (err, res) => {
       if (err || res == null) return callback(err);
@@ -87,7 +101,7 @@ export class InsertOneOperation extends InsertOperation {
 
       callback(undefined, {
         acknowledged: this.writeConcern?.w !== 0 ?? true,
-        insertedId: this.documents[0]._id
+        insertedId: this.documents[0]._id,
       });
     });
   }
@@ -109,11 +123,17 @@ export class InsertManyOperation extends AbstractOperation<InsertManyResult> {
   collection: Collection;
   docs: Document[];
 
-  constructor(collection: Collection, docs: Document[], options: BulkWriteOptions) {
+  constructor(
+    collection: Collection,
+    docs: Document[],
+    options: BulkWriteOptions,
+  ) {
     super(options);
 
     if (!Array.isArray(docs)) {
-      throw new MongoInvalidArgumentError('Argument "docs" must be an array of documents');
+      throw new MongoInvalidArgumentError(
+        'Argument "docs" must be an array of documents',
+      );
     }
 
     this.options = options;
@@ -124,15 +144,21 @@ export class InsertManyOperation extends AbstractOperation<InsertManyResult> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<InsertManyResult>
+    callback: Callback<InsertManyResult>,
   ): void {
     const coll = this.collection;
-    const options = { ...this.options, ...this.bsonOptions, readPreference: this.readPreference };
+    const options = {
+      ...this.options,
+      ...this.bsonOptions,
+      readPreference: this.readPreference,
+    };
     const writeConcern = WriteConcern.fromOptions(options);
     const bulkWriteOperation = new BulkWriteOperation(
       coll,
-      prepareDocs(coll, this.docs, options).map(document => ({ insertOne: { document } })),
-      options
+      prepareDocs(coll, this.docs, options).map((document) => ({
+        insertOne: { document },
+      })),
+      options,
     );
 
     bulkWriteOperation.execute(server, session, (err, res) => {
@@ -140,7 +166,7 @@ export class InsertManyOperation extends AbstractOperation<InsertManyResult> {
       callback(undefined, {
         acknowledged: writeConcern?.w !== 0 ?? true,
         insertedCount: res.insertedCount,
-        insertedIds: res.insertedIds
+        insertedIds: res.insertedIds,
       });
     });
   }

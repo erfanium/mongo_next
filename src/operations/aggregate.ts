@@ -1,10 +1,14 @@
-import type { Document } from '../bson.ts';
-import { MongoInvalidArgumentError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, maxWireVersion, MongoDBNamespace } from '../utils.ts';
-import { CollationOptions, CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects, Hint } from './operation.ts';
+import type { Document } from "../bson.ts";
+import { MongoInvalidArgumentError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, maxWireVersion, MongoDBNamespace } from "../utils.ts";
+import {
+  CollationOptions,
+  CommandOperation,
+  CommandOperationOptions,
+} from "./command.ts";
+import { Aspect, defineAspects, Hint } from "./operation.ts";
 
 /** @internal */
 export const DB_AGGREGATE_COLLECTION = 1 as const;
@@ -41,7 +45,11 @@ export class AggregateOperation<T = Document> extends CommandOperation<T> {
   pipeline: Document[];
   hasWriteStage: boolean;
 
-  constructor(ns: MongoDBNamespace, pipeline: Document[], options?: AggregateOptions) {
+  constructor(
+    ns: MongoDBNamespace,
+    pipeline: Document[],
+    options?: AggregateOptions,
+  ) {
     super(undefined, { ...options, dbName: ns.db });
 
     this.options = options ?? {};
@@ -53,7 +61,7 @@ export class AggregateOperation<T = Document> extends CommandOperation<T> {
 
     // determine if we have a write stage, override read preference if so
     this.hasWriteStage = false;
-    if (typeof options?.out === 'string') {
+    if (typeof options?.out === "string") {
       this.pipeline = this.pipeline.concat({ $out: options.out });
       this.hasWriteStage = true;
     } else if (pipeline.length > 0) {
@@ -69,12 +77,12 @@ export class AggregateOperation<T = Document> extends CommandOperation<T> {
 
     if (this.explain && this.writeConcern) {
       throw new MongoInvalidArgumentError(
-        'Option "explain" cannot be used on an aggregate call with writeConcern'
+        'Option "explain" cannot be used on an aggregate call with writeConcern',
       );
     }
 
-    if (options?.cursor != null && typeof options.cursor !== 'object') {
-      throw new MongoInvalidArgumentError('Cursor options must be an object');
+    if (options?.cursor != null && typeof options.cursor !== "object") {
+      throw new MongoInvalidArgumentError("Cursor options must be an object");
     }
   }
 
@@ -89,13 +97,19 @@ export class AggregateOperation<T = Document> extends CommandOperation<T> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<T>
+    callback: Callback<T>,
   ): void {
     const options: AggregateOptions = this.options;
     const serverWireVersion = maxWireVersion(server);
-    const command: Document = { aggregate: this.target, pipeline: this.pipeline };
+    const command: Document = {
+      aggregate: this.target,
+      pipeline: this.pipeline,
+    };
 
-    if (this.hasWriteStage && serverWireVersion < MIN_WIRE_VERSION_$OUT_READ_CONCERN_SUPPORT) {
+    if (
+      this.hasWriteStage &&
+      serverWireVersion < MIN_WIRE_VERSION_$OUT_READ_CONCERN_SUPPORT
+    ) {
       this.readConcern = undefined;
     }
 
@@ -109,7 +123,7 @@ export class AggregateOperation<T = Document> extends CommandOperation<T> {
       command.bypassDocumentValidation = options.bypassDocumentValidation;
     }
 
-    if (typeof options.allowDiskUse === 'boolean') {
+    if (typeof options.allowDiskUse === "boolean") {
       command.allowDiskUse = options.allowDiskUse;
     }
 
@@ -140,5 +154,5 @@ defineAspects(AggregateOperation, [
   Aspect.READ_OPERATION,
   Aspect.RETRYABLE,
   Aspect.EXPLAINABLE,
-  Aspect.CURSOR_CREATING
+  Aspect.CURSOR_CREATING,
 ]);

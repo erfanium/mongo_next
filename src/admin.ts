@@ -1,20 +1,26 @@
-import type { Document } from './bson.ts';
-import type { Db } from './db.ts';
-import { AddUserOperation, AddUserOptions } from './operations/add_user.ts';
-import type { CommandOperationOptions } from './operations/command.ts';
-import { executeOperation } from './operations/execute_operation.ts';
+import type { Document } from "./bson.ts";
+import type { Db } from "./db.ts";
+import { AddUserOperation, AddUserOptions } from "./operations/add_user.ts";
+import type { CommandOperationOptions } from "./operations/command.ts";
+import { executeOperation } from "./operations/execute_operation.ts";
 import {
   ListDatabasesOperation,
   ListDatabasesOptions,
-  ListDatabasesResult
-} from './operations/list_databases.ts';
-import { RemoveUserOperation, RemoveUserOptions } from './operations/remove_user.ts';
-import { RunCommandOperation, RunCommandOptions } from './operations/run_command.ts';
+  ListDatabasesResult,
+} from "./operations/list_databases.ts";
+import {
+  RemoveUserOperation,
+  RemoveUserOptions,
+} from "./operations/remove_user.ts";
+import {
+  RunCommandOperation,
+  RunCommandOptions,
+} from "./operations/run_command.ts";
 import {
   ValidateCollectionOperation,
-  ValidateCollectionOptions
-} from './operations/validate_collection.ts';
-import type { Callback } from './utils.ts';
+  ValidateCollectionOptions,
+} from "./operations/validate_collection.ts";
+import type { Callback } from "./utils.ts";
 
 /** @internal */
 export interface AdminPrivate {
@@ -73,19 +79,23 @@ export class Admin {
   command(command: Document): Promise<Document>;
   command(command: Document, callback: Callback<Document>): void;
   command(command: Document, options: RunCommandOptions): Promise<Document>;
-  command(command: Document, options: RunCommandOptions, callback: Callback<Document>): void;
+  command(
+    command: Document,
+    options: RunCommandOptions,
+    callback: Callback<Document>,
+  ): void;
   command(
     command: Document,
     options?: RunCommandOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
-    options = Object.assign({ dbName: 'admin' }, options);
+    if (typeof options === "function") (callback = options), (options = {});
+    options = Object.assign({ dbName: "admin" }, options);
 
     return executeOperation(
       this.s.db,
       new RunCommandOperation(this.s.db, command, options),
-      callback
+      callback,
     );
   }
 
@@ -98,14 +108,21 @@ export class Admin {
   buildInfo(): Promise<Document>;
   buildInfo(callback: Callback<Document>): void;
   buildInfo(options: CommandOperationOptions): Promise<Document>;
-  buildInfo(options: CommandOperationOptions, callback: Callback<Document>): void;
+  buildInfo(
+    options: CommandOperationOptions,
+    callback: Callback<Document>,
+  ): void;
   buildInfo(
     options?: CommandOperationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
-    return this.command({ buildinfo: 1 }, options, callback as Callback<Document>);
+    return this.command(
+      { buildinfo: 1 },
+      options,
+      callback as Callback<Document>,
+    );
   }
 
   /**
@@ -117,14 +134,21 @@ export class Admin {
   serverInfo(): Promise<Document>;
   serverInfo(callback: Callback<Document>): void;
   serverInfo(options: CommandOperationOptions): Promise<Document>;
-  serverInfo(options: CommandOperationOptions, callback: Callback<Document>): void;
+  serverInfo(
+    options: CommandOperationOptions,
+    callback: Callback<Document>,
+  ): void;
   serverInfo(
     options?: CommandOperationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
-    return this.command({ buildinfo: 1 }, options, callback as Callback<Document>);
+    return this.command(
+      { buildinfo: 1 },
+      options,
+      callback as Callback<Document>,
+    );
   }
 
   /**
@@ -136,14 +160,21 @@ export class Admin {
   serverStatus(): Promise<Document>;
   serverStatus(callback: Callback<Document>): void;
   serverStatus(options: CommandOperationOptions): Promise<Document>;
-  serverStatus(options: CommandOperationOptions, callback: Callback<Document>): void;
+  serverStatus(
+    options: CommandOperationOptions,
+    callback: Callback<Document>,
+  ): void;
   serverStatus(
     options?: CommandOperationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
-    return this.command({ serverStatus: 1 }, options, callback as Callback<Document>);
+    return this.command(
+      { serverStatus: 1 },
+      options,
+      callback as Callback<Document>,
+    );
   }
 
   /**
@@ -158,9 +189,9 @@ export class Admin {
   ping(options: CommandOperationOptions, callback: Callback<Document>): void;
   ping(
     options?: CommandOperationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
     return this.command({ ping: 1 }, options, callback as Callback<Document>);
   }
@@ -176,40 +207,52 @@ export class Admin {
   addUser(username: string): Promise<Document>;
   addUser(username: string, callback: Callback<Document>): void;
   addUser(username: string, password: string): Promise<Document>;
-  addUser(username: string, password: string, callback: Callback<Document>): void;
+  addUser(
+    username: string,
+    password: string,
+    callback: Callback<Document>,
+  ): void;
   addUser(username: string, options: AddUserOptions): Promise<Document>;
-  addUser(username: string, options: AddUserOptions, callback: Callback<Document>): void;
-  addUser(username: string, password: string, options: AddUserOptions): Promise<Document>;
+  addUser(
+    username: string,
+    options: AddUserOptions,
+    callback: Callback<Document>,
+  ): void;
   addUser(
     username: string,
     password: string,
     options: AddUserOptions,
-    callback: Callback<Document>
+  ): Promise<Document>;
+  addUser(
+    username: string,
+    password: string,
+    options: AddUserOptions,
+    callback: Callback<Document>,
   ): void;
   addUser(
     username: string,
     password?: string | AddUserOptions | Callback<Document>,
     options?: AddUserOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof password === 'function') {
+    if (typeof password === "function") {
       (callback = password), (password = undefined), (options = {});
-    } else if (typeof password !== 'string') {
-      if (typeof options === 'function') {
+    } else if (typeof password !== "string") {
+      if (typeof options === "function") {
         (callback = options), (options = password), (password = undefined);
       } else {
         (options = password), (callback = undefined), (password = undefined);
       }
     } else {
-      if (typeof options === 'function') (callback = options), (options = {});
+      if (typeof options === "function") (callback = options), (options = {});
     }
 
-    options = Object.assign({ dbName: 'admin' }, options);
+    options = Object.assign({ dbName: "admin" }, options);
 
     return executeOperation(
       this.s.db,
       new AddUserOperation(this.s.db, username, password, options),
-      callback
+      callback,
     );
   }
 
@@ -223,19 +266,23 @@ export class Admin {
   removeUser(username: string): Promise<boolean>;
   removeUser(username: string, callback: Callback<boolean>): void;
   removeUser(username: string, options: RemoveUserOptions): Promise<boolean>;
-  removeUser(username: string, options: RemoveUserOptions, callback: Callback<boolean>): void;
+  removeUser(
+    username: string,
+    options: RemoveUserOptions,
+    callback: Callback<boolean>,
+  ): void;
   removeUser(
     username: string,
     options?: RemoveUserOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
-    options = Object.assign({ dbName: 'admin' }, options);
+    if (typeof options === "function") (callback = options), (options = {});
+    options = Object.assign({ dbName: "admin" }, options);
 
     return executeOperation(
       this.s.db,
       new RemoveUserOperation(this.s.db, username, options),
-      callback
+      callback,
     );
   }
 
@@ -247,25 +294,31 @@ export class Admin {
    * @param callback - An optional callback, a Promise will be returned if none is provided
    */
   validateCollection(collectionName: string): Promise<Document>;
-  validateCollection(collectionName: string, callback: Callback<Document>): void;
-  validateCollection(collectionName: string, options: ValidateCollectionOptions): Promise<Document>;
+  validateCollection(
+    collectionName: string,
+    callback: Callback<Document>,
+  ): void;
   validateCollection(
     collectionName: string,
     options: ValidateCollectionOptions,
-    callback: Callback<Document>
+  ): Promise<Document>;
+  validateCollection(
+    collectionName: string,
+    options: ValidateCollectionOptions,
+    callback: Callback<Document>,
   ): void;
   validateCollection(
     collectionName: string,
     options?: ValidateCollectionOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     return executeOperation(
       this.s.db,
       new ValidateCollectionOperation(this, collectionName, options),
-      callback
+      callback,
     );
   }
 
@@ -278,15 +331,22 @@ export class Admin {
   listDatabases(): Promise<ListDatabasesResult>;
   listDatabases(callback: Callback<ListDatabasesResult>): void;
   listDatabases(options: ListDatabasesOptions): Promise<ListDatabasesResult>;
-  listDatabases(options: ListDatabasesOptions, callback: Callback<ListDatabasesResult>): void;
+  listDatabases(
+    options: ListDatabasesOptions,
+    callback: Callback<ListDatabasesResult>,
+  ): void;
   listDatabases(
     options?: ListDatabasesOptions | Callback<ListDatabasesResult>,
-    callback?: Callback<ListDatabasesResult>
+    callback?: Callback<ListDatabasesResult>,
   ): Promise<ListDatabasesResult> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
-    return executeOperation(this.s.db, new ListDatabasesOperation(this.s.db, options), callback);
+    return executeOperation(
+      this.s.db,
+      new ListDatabasesOperation(this.s.db, options),
+      callback,
+    );
   }
 
   /**
@@ -298,13 +358,20 @@ export class Admin {
   replSetGetStatus(): Promise<Document>;
   replSetGetStatus(callback: Callback<Document>): void;
   replSetGetStatus(options: CommandOperationOptions): Promise<Document>;
-  replSetGetStatus(options: CommandOperationOptions, callback: Callback<Document>): void;
+  replSetGetStatus(
+    options: CommandOperationOptions,
+    callback: Callback<Document>,
+  ): void;
   replSetGetStatus(
     options?: CommandOperationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
-    return this.command({ replSetGetStatus: 1 }, options, callback as Callback<Document>);
+    return this.command(
+      { replSetGetStatus: 1 },
+      options,
+      callback as Callback<Document>,
+    );
   }
 }

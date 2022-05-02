@@ -1,34 +1,34 @@
-import type { Document } from '../bson.ts';
-import { Collection } from '../collection.ts';
-import type { Db } from '../db.ts';
-import type { PkFactory } from '../mongo_client.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import { Collection } from "../collection.ts";
+import type { Db } from "../db.ts";
+import type { PkFactory } from "../mongo_client.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 const ILLEGAL_COMMAND_FIELDS = new Set([
-  'w',
-  'wtimeout',
-  'j',
-  'fsync',
-  'autoIndexId',
-  'pkFactory',
-  'raw',
-  'readPreference',
-  'session',
-  'readConcern',
-  'writeConcern',
-  'raw',
-  'fieldsAsRaw',
-  'promoteLongs',
-  'promoteValues',
-  'promoteBuffers',
-  'bsonRegExp',
-  'serializeFunctions',
-  'ignoreUndefined',
-  'enableUtf8Validation'
+  "w",
+  "wtimeout",
+  "j",
+  "fsync",
+  "autoIndexId",
+  "pkFactory",
+  "raw",
+  "readPreference",
+  "session",
+  "readConcern",
+  "writeConcern",
+  "raw",
+  "fieldsAsRaw",
+  "promoteLongs",
+  "promoteValues",
+  "promoteBuffers",
+  "bsonRegExp",
+  "serializeFunctions",
+  "ignoreUndefined",
+  "enableUtf8Validation",
 ]);
 
 /** @public
@@ -38,7 +38,7 @@ const ILLEGAL_COMMAND_FIELDS = new Set([
 export interface TimeSeriesCollectionOptions extends Document {
   timeField: string;
   metaField?: string;
-  granularity?: 'seconds' | 'minutes' | 'hours' | string;
+  granularity?: "seconds" | "minutes" | "hours" | string;
 }
 
 /** @public */
@@ -94,13 +94,13 @@ export class CreateCollectionOperation extends CommandOperation<Collection> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Collection>
+    callback: Callback<Collection>,
   ): void {
     const db = this.db;
     const name = this.name;
     const options = this.options;
 
-    const done: Callback = err => {
+    const done: Callback = (err) => {
       if (err) {
         return callback(err);
       }
@@ -112,7 +112,7 @@ export class CreateCollectionOperation extends CommandOperation<Collection> {
     for (const n in options) {
       if (
         (options as any)[n] != null &&
-        typeof (options as any)[n] !== 'function' &&
+        typeof (options as any)[n] !== "function" &&
         !ILLEGAL_COMMAND_FIELDS.has(n)
       ) {
         cmd[n] = (options as any)[n];

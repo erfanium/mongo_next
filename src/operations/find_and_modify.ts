@@ -1,20 +1,30 @@
-import type { Document } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoCompatibilityError, MongoInvalidArgumentError } from '../error.ts';
-import { ReadPreference } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { formatSort, Sort, SortForCmd } from '../sort.ts';
-import { Callback, decorateWithCollation, hasAtomicOperators, maxWireVersion } from '../utils.ts';
-import type { WriteConcern, WriteConcernSettings } from '../write_concern.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Document } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import {
+  MongoCompatibilityError,
+  MongoInvalidArgumentError,
+} from "../error.ts";
+import { ReadPreference } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { formatSort, Sort, SortForCmd } from "../sort.ts";
+import {
+  Callback,
+  decorateWithCollation,
+  hasAtomicOperators,
+  maxWireVersion,
+} from "../utils.ts";
+import type { WriteConcern, WriteConcernSettings } from "../write_concern.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
-export const ReturnDocument = Object.freeze({
-  BEFORE: 'before',
-  AFTER: 'after'
-} as const);
+export const ReturnDocument = Object.freeze(
+  {
+    BEFORE: "before",
+    AFTER: "after",
+  } as const,
+);
 
 /** @public */
 export type ReturnDocument = typeof ReturnDocument[keyof typeof ReturnDocument];
@@ -95,7 +105,7 @@ interface FindAndModifyCmdBase {
 
 function configureFindAndModifyCmdBaseUpdateOpts(
   cmdBase: FindAndModifyCmdBase,
-  options: FindOneAndReplaceOptions | FindOneAndUpdateOptions
+  options: FindOneAndReplaceOptions | FindOneAndUpdateOptions,
 ): FindAndModifyCmdBase {
   cmdBase.new = options.returnDocument === ReturnDocument.AFTER;
   cmdBase.upsert = options.upsert === true;
@@ -108,7 +118,10 @@ function configureFindAndModifyCmdBaseUpdateOpts(
 
 /** @internal */
 class FindAndModifyOperation extends CommandOperation<Document> {
-  override options: FindOneAndReplaceOptions | FindOneAndUpdateOptions | FindOneAndDeleteOptions;
+  override options:
+    | FindOneAndReplaceOptions
+    | FindOneAndUpdateOptions
+    | FindOneAndDeleteOptions;
   cmdBase: FindAndModifyCmdBase;
   collection: Collection;
   query: Document;
@@ -117,14 +130,17 @@ class FindAndModifyOperation extends CommandOperation<Document> {
   constructor(
     collection: Collection,
     query: Document,
-    options: FindOneAndReplaceOptions | FindOneAndUpdateOptions | FindOneAndDeleteOptions
+    options:
+      | FindOneAndReplaceOptions
+      | FindOneAndUpdateOptions
+      | FindOneAndDeleteOptions,
   ) {
     super(collection, options);
     this.options = options ?? {};
     this.cmdBase = {
       remove: false,
       new: false,
-      upsert: false
+      upsert: false,
     };
 
     const sort = formatSort(options.sort);
@@ -165,7 +181,7 @@ class FindAndModifyOperation extends CommandOperation<Document> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     const coll = this.collection;
     const query = this.query;
@@ -175,7 +191,7 @@ class FindAndModifyOperation extends CommandOperation<Document> {
     const cmd: Document = {
       findAndModify: coll.collectionName,
       query: query,
-      ...this.cmdBase
+      ...this.cmdBase,
     };
 
     // Have we specified collation
@@ -192,8 +208,8 @@ class FindAndModifyOperation extends CommandOperation<Document> {
       if (unacknowledgedWrite || maxWireVersion(server) < 8) {
         callback(
           new MongoCompatibilityError(
-            'The current topology does not support a hint on findAndModify commands'
-          )
+            "The current topology does not support a hint on findAndModify commands",
+          ),
         );
 
         return;
@@ -205,8 +221,8 @@ class FindAndModifyOperation extends CommandOperation<Document> {
     if (this.explain && maxWireVersion(server) < 4) {
       callback(
         new MongoCompatibilityError(
-          `Server ${server.name} does not support explain on findAndModify`
-        )
+          `Server ${server.name} does not support explain on findAndModify`,
+        ),
       );
       return;
     }
@@ -221,10 +237,16 @@ class FindAndModifyOperation extends CommandOperation<Document> {
 
 /** @internal */
 export class FindOneAndDeleteOperation extends FindAndModifyOperation {
-  constructor(collection: Collection, filter: Document, options: FindOneAndDeleteOptions) {
+  constructor(
+    collection: Collection,
+    filter: Document,
+    options: FindOneAndDeleteOptions,
+  ) {
     // Basic validation
-    if (filter == null || typeof filter !== 'object') {
-      throw new MongoInvalidArgumentError('Argument "filter" must be an object');
+    if (filter == null || typeof filter !== "object") {
+      throw new MongoInvalidArgumentError(
+        'Argument "filter" must be an object',
+      );
     }
 
     super(collection, filter, options);
@@ -238,18 +260,24 @@ export class FindOneAndReplaceOperation extends FindAndModifyOperation {
     collection: Collection,
     filter: Document,
     replacement: Document,
-    options: FindOneAndReplaceOptions
+    options: FindOneAndReplaceOptions,
   ) {
-    if (filter == null || typeof filter !== 'object') {
-      throw new MongoInvalidArgumentError('Argument "filter" must be an object');
+    if (filter == null || typeof filter !== "object") {
+      throw new MongoInvalidArgumentError(
+        'Argument "filter" must be an object',
+      );
     }
 
-    if (replacement == null || typeof replacement !== 'object') {
-      throw new MongoInvalidArgumentError('Argument "replacement" must be an object');
+    if (replacement == null || typeof replacement !== "object") {
+      throw new MongoInvalidArgumentError(
+        'Argument "replacement" must be an object',
+      );
     }
 
     if (hasAtomicOperators(replacement)) {
-      throw new MongoInvalidArgumentError('Replacement document must not contain atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Replacement document must not contain atomic operators",
+      );
     }
 
     super(collection, filter, options);
@@ -264,18 +292,24 @@ export class FindOneAndUpdateOperation extends FindAndModifyOperation {
     collection: Collection,
     filter: Document,
     update: Document,
-    options: FindOneAndUpdateOptions
+    options: FindOneAndUpdateOptions,
   ) {
-    if (filter == null || typeof filter !== 'object') {
-      throw new MongoInvalidArgumentError('Argument "filter" must be an object');
+    if (filter == null || typeof filter !== "object") {
+      throw new MongoInvalidArgumentError(
+        'Argument "filter" must be an object',
+      );
     }
 
-    if (update == null || typeof update !== 'object') {
-      throw new MongoInvalidArgumentError('Argument "update" must be an object');
+    if (update == null || typeof update !== "object") {
+      throw new MongoInvalidArgumentError(
+        'Argument "update" must be an object',
+      );
     }
 
     if (!hasAtomicOperators(update)) {
-      throw new MongoInvalidArgumentError('Update document requires atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Update document requires atomic operators",
+      );
     }
 
     super(collection, filter, options);
@@ -291,5 +325,5 @@ export class FindOneAndUpdateOperation extends FindAndModifyOperation {
 defineAspects(FindAndModifyOperation, [
   Aspect.WRITE_OPERATION,
   Aspect.RETRYABLE,
-  Aspect.EXPLAINABLE
+  Aspect.EXPLAINABLE,
 ]);

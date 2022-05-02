@@ -1,33 +1,44 @@
 // @ts-nocheck
-import type { Document } from '../bson.ts';
-import { MongoInvalidArgumentError, MongoTailableCursorError } from '../error.ts';
-import type { ExplainVerbosityLike } from '../explain.ts';
-import type { CollationOptions } from '../operations/command.ts';
-import { CountOperation, CountOptions } from '../operations/count.ts';
-import { executeOperation, ExecutionResult } from '../operations/execute_operation.ts';
-import { FindOperation, FindOptions } from '../operations/find.ts';
-import type { Hint } from '../operations/operation.ts';
-import type { Topology } from '../sdam/topology.ts';
-import type { ClientSession } from '../sessions.ts';
-import { formatSort, Sort, SortDirection } from '../sort.ts';
-import { Callback, emitWarningOnce, mergeOptions, MongoDBNamespace } from '../utils.ts';
-import { AbstractCursor, assertUninitialized } from './abstract_cursor.ts';
+import type { Document } from "../bson.ts";
+import {
+  MongoInvalidArgumentError,
+  MongoTailableCursorError,
+} from "../error.ts";
+import type { ExplainVerbosityLike } from "../explain.ts";
+import type { CollationOptions } from "../operations/command.ts";
+import { CountOperation, CountOptions } from "../operations/count.ts";
+import {
+  executeOperation,
+  ExecutionResult,
+} from "../operations/execute_operation.ts";
+import { FindOperation, FindOptions } from "../operations/find.ts";
+import type { Hint } from "../operations/operation.ts";
+import type { Topology } from "../sdam/topology.ts";
+import type { ClientSession } from "../sessions.ts";
+import { formatSort, Sort, SortDirection } from "../sort.ts";
+import {
+  Callback,
+  emitWarningOnce,
+  mergeOptions,
+  MongoDBNamespace,
+} from "../utils.ts";
+import { AbstractCursor, assertUninitialized } from "./abstract_cursor.ts";
 
 /** @internal */
-const kFilter = Symbol('filter');
+const kFilter = Symbol("filter");
 /** @internal */
-const kNumReturned = Symbol('numReturned');
+const kNumReturned = Symbol("numReturned");
 /** @internal */
-const kBuiltOptions = Symbol('builtOptions');
+const kBuiltOptions = Symbol("builtOptions");
 
 /** @public Flags allowed for cursor */
 export const FLAGS = [
-  'tailable',
-  'oplogReplay',
-  'noCursorTimeout',
-  'awaitData',
-  'exhaust',
-  'partial'
+  "tailable",
+  "oplogReplay",
+  "noCursorTimeout",
+  "awaitData",
+  "exhaust",
+  "partial",
 ] as const;
 
 /** @public */
@@ -44,7 +55,7 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
     topology: Topology,
     namespace: MongoDBNamespace,
     filter: Document | undefined,
-    options: FindOptions = {}
+    options: FindOptions = {},
   ) {
     super(topology, namespace, options);
 
@@ -60,7 +71,7 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
     const clonedOptions = mergeOptions({}, this[kBuiltOptions]);
     delete clonedOptions.session;
     return new FindCursor(this.topology, this.namespace, this[kFilter], {
-      ...clonedOptions
+      ...clonedOptions,
     });
   }
 
@@ -69,12 +80,20 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   }
 
   /** @internal */
-  _initialize(session: ClientSession, callback: Callback<ExecutionResult>): void {
-    const findOperation = new FindOperation(undefined, this.namespace, this[kFilter], {
-      ...this[kBuiltOptions], // NOTE: order matters here, we may need to refine this
-      ...this.cursorOptions,
-      session
-    });
+  _initialize(
+    session: ClientSession,
+    callback: Callback<ExecutionResult>,
+  ): void {
+    const findOperation = new FindOperation(
+      undefined,
+      this.namespace,
+      this[kFilter],
+      {
+        ...this[kBuiltOptions], // NOTE: order matters here, we may need to refine this
+        ...this.cursorOptions,
+        session,
+      },
+    );
 
     executeOperation(this, findOperation, (err, response) => {
       if (err || response == null) return callback(err);
@@ -98,8 +117,9 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
     const numReturned = this[kNumReturned];
     if (numReturned) {
       const limit = this[kBuiltOptions].limit;
-      batchSize =
-        limit && limit > 0 && numReturned + batchSize > limit ? limit - numReturned : batchSize;
+      batchSize = limit && limit > 0 && numReturned + batchSize > limit
+        ? limit - numReturned
+        : batchSize;
 
       if (batchSize <= 0) {
         return this.close(callback);
@@ -111,7 +131,8 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
 
       // TODO: wrap this in some logic to prevent it from happening if we don't need this support
       if (response) {
-        this[kNumReturned] = this[kNumReturned] + response.cursor.nextBatch.length;
+        this[kNumReturned] = this[kNumReturned] +
+          response.cursor.nextBatch.length;
       }
 
       callback(undefined, response);
@@ -131,16 +152,16 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   count(options: CountOptions, callback: Callback<number>): void;
   count(
     options?: CountOptions | Callback<number>,
-    callback?: Callback<number>
+    callback?: Callback<number>,
   ): Promise<number> | void {
     emitWarningOnce(
-      'cursor.count is deprecated and will be removed in the next major version, please use `collection.estimatedDocumentCount` or `collection.countDocuments` instead '
+      "cursor.count is deprecated and will be removed in the next major version, please use `collection.estimatedDocumentCount` or `collection.countDocuments` instead ",
     );
-    if (typeof options === 'boolean') {
-      throw new MongoInvalidArgumentError('Invalid first parameter to count');
+    if (typeof options === "boolean") {
+      throw new MongoInvalidArgumentError("Invalid first parameter to count");
     }
 
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     return executeOperation(
@@ -148,9 +169,9 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
       new CountOperation(this.namespace, this[kFilter], {
         ...this[kBuiltOptions], // NOTE: order matters here, we may need to refine this
         ...this.cursorOptions,
-        ...options
+        ...options,
       }),
-      callback
+      callback,
     );
   }
 
@@ -160,9 +181,11 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   explain(verbosity?: ExplainVerbosityLike): Promise<Document>;
   explain(
     verbosity?: ExplainVerbosityLike | Callback,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof verbosity === 'function') (callback = verbosity), (verbosity = true);
+    if (typeof verbosity === "function") {
+      (callback = verbosity), (verbosity = true);
+    }
     if (verbosity == null) verbosity = true;
 
     return executeOperation(
@@ -170,9 +193,9 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
       new FindOperation(undefined, this.namespace, this[kFilter], {
         ...this[kBuiltOptions], // NOTE: order matters here, we may need to refine this
         ...this.cursorOptions,
-        explain: verbosity
+        explain: verbosity,
       }),
-      callback
+      callback,
     );
   }
 
@@ -246,10 +269,15 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
    * @param name - The query modifier (must start with $, such as $orderby etc)
    * @param value - The modifier value.
    */
-  addQueryModifier(name: string, value: string | boolean | number | Document): this {
+  addQueryModifier(
+    name: string,
+    value: string | boolean | number | Document,
+  ): this {
     assertUninitialized(this);
-    if (name[0] !== '$') {
-      throw new MongoInvalidArgumentError(`${name} is not a valid query modifier`);
+    if (name[0] !== "$") {
+      throw new MongoInvalidArgumentError(
+        `${name} is not a valid query modifier`,
+      );
     }
 
     // Strip of the $
@@ -257,43 +285,43 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
 
     // NOTE: consider some TS magic for this
     switch (field) {
-      case 'comment':
+      case "comment":
         this[kBuiltOptions].comment = value as string | Document;
         break;
 
-      case 'explain':
+      case "explain":
         this[kBuiltOptions].explain = value as boolean;
         break;
 
-      case 'hint':
+      case "hint":
         this[kBuiltOptions].hint = value as string | Document;
         break;
 
-      case 'max':
+      case "max":
         this[kBuiltOptions].max = value as Document;
         break;
 
-      case 'maxTimeMS':
+      case "maxTimeMS":
         this[kBuiltOptions].maxTimeMS = value as number;
         break;
 
-      case 'min':
+      case "min":
         this[kBuiltOptions].min = value as Document;
         break;
 
-      case 'orderby':
+      case "orderby":
         this[kBuiltOptions].sort = formatSort(value as string | Document);
         break;
 
-      case 'query':
+      case "query":
         this[kFilter] = value as Document;
         break;
 
-      case 'returnKey':
+      case "returnKey":
         this[kBuiltOptions].returnKey = value as boolean;
         break;
 
-      case 'showDiskLoc':
+      case "showDiskLoc":
         this[kBuiltOptions].showRecordId = value as boolean;
         break;
 
@@ -322,8 +350,10 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
    */
   maxAwaitTimeMS(value: number): this {
     assertUninitialized(this);
-    if (typeof value !== 'number') {
-      throw new MongoInvalidArgumentError('Argument for maxAwaitTimeMS must be a number');
+    if (typeof value !== "number") {
+      throw new MongoInvalidArgumentError(
+        "Argument for maxAwaitTimeMS must be a number",
+      );
     }
 
     this[kBuiltOptions].maxAwaitTimeMS = value;
@@ -337,8 +367,10 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
    */
   override maxTimeMS(value: number): this {
     assertUninitialized(this);
-    if (typeof value !== 'number') {
-      throw new MongoInvalidArgumentError('Argument for maxTimeMS must be a number');
+    if (typeof value !== "number") {
+      throw new MongoInvalidArgumentError(
+        "Argument for maxTimeMS must be a number",
+      );
     }
 
     this[kBuiltOptions].maxTimeMS = value;
@@ -400,7 +432,9 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   sort(sort: Sort | string, direction?: SortDirection): this {
     assertUninitialized(this);
     if (this[kBuiltOptions].tailable) {
-      throw new MongoTailableCursorError('Tailable cursor does not support sorting');
+      throw new MongoTailableCursorError(
+        "Tailable cursor does not support sorting",
+      );
     }
 
     this[kBuiltOptions].sort = formatSort(sort, direction);
@@ -416,7 +450,9 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   allowDiskUse(): this {
     assertUninitialized(this);
     if (!this[kBuiltOptions].sort) {
-      throw new MongoInvalidArgumentError('Option "allowDiskUse" requires a sort specification');
+      throw new MongoInvalidArgumentError(
+        'Option "allowDiskUse" requires a sort specification',
+      );
     }
     this[kBuiltOptions].allowDiskUse = true;
     return this;
@@ -441,11 +477,15 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   limit(value: number): this {
     assertUninitialized(this);
     if (this[kBuiltOptions].tailable) {
-      throw new MongoTailableCursorError('Tailable cursor does not support limit');
+      throw new MongoTailableCursorError(
+        "Tailable cursor does not support limit",
+      );
     }
 
-    if (typeof value !== 'number') {
-      throw new MongoInvalidArgumentError('Operation "limit" requires an integer');
+    if (typeof value !== "number") {
+      throw new MongoInvalidArgumentError(
+        'Operation "limit" requires an integer',
+      );
     }
 
     this[kBuiltOptions].limit = value;
@@ -460,11 +500,15 @@ export class FindCursor<TSchema = any> extends AbstractCursor<TSchema> {
   skip(value: number): this {
     assertUninitialized(this);
     if (this[kBuiltOptions].tailable) {
-      throw new MongoTailableCursorError('Tailable cursor does not support skip');
+      throw new MongoTailableCursorError(
+        "Tailable cursor does not support skip",
+      );
     }
 
-    if (typeof value !== 'number') {
-      throw new MongoInvalidArgumentError('Operation "skip" requires an integer');
+    if (typeof value !== "number") {
+      throw new MongoInvalidArgumentError(
+        'Operation "skip" requires an integer',
+      );
     }
 
     this[kBuiltOptions].skip = value;

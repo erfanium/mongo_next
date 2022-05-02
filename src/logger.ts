@@ -1,5 +1,5 @@
-import { MongoInvalidArgumentError } from './error.ts';
-import { enumToString } from './utils.ts';
+import { MongoInvalidArgumentError } from "./error.ts";
+import { enumToString } from "./utils.ts";
 
 // Filters for classes
 const classFilters: any = {};
@@ -14,16 +14,18 @@ const pid = 12345;
 let currentLogger: LoggerFunction = console.warn;
 
 /** @public */
-export const LoggerLevel = Object.freeze({
-  ERROR: 'error',
-  WARN: 'warn',
-  INFO: 'info',
-  DEBUG: 'debug',
-  error: 'error',
-  warn: 'warn',
-  info: 'info',
-  debug: 'debug'
-} as const);
+export const LoggerLevel = Object.freeze(
+  {
+    ERROR: "error",
+    WARN: "warn",
+    INFO: "info",
+    DEBUG: "debug",
+    error: "error",
+    warn: "warn",
+    info: "info",
+    debug: "debug",
+  } as const,
+);
 
 /** @public */
 export type LoggerLevel = typeof LoggerLevel[keyof typeof LoggerLevel];
@@ -56,7 +58,10 @@ export class Logger {
     this.className = className;
 
     // Current logger
-    if (!(options.logger instanceof Logger) && typeof options.logger === 'function') {
+    if (
+      !(options.logger instanceof Logger) &&
+      typeof options.logger === "function"
+    ) {
       currentLogger = options.logger;
     }
 
@@ -80,8 +85,10 @@ export class Logger {
   debug(message: string, object?: unknown): void {
     if (
       this.isDebug() &&
-      ((Object.keys(filteredClasses).length > 0 && filteredClasses[this.className]) ||
-        (Object.keys(filteredClasses).length === 0 && classFilters[this.className]))
+      ((Object.keys(filteredClasses).length > 0 &&
+        filteredClasses[this.className]) ||
+        (Object.keys(filteredClasses).length === 0 &&
+          classFilters[this.className]))
     ) {
       const dateTime = new Date().getTime();
       const msg = `[DEBUG-${this.className}:${pid}] ${dateTime} ${message}`;
@@ -90,7 +97,7 @@ export class Logger {
         message,
         className: this.className,
         pid,
-        date: dateTime
+        date: dateTime,
       } as any;
 
       if (object) state.meta = object;
@@ -107,17 +114,19 @@ export class Logger {
   warn(message: string, object?: unknown): void {
     if (
       this.isWarn() &&
-      ((Object.keys(filteredClasses).length > 0 && filteredClasses[this.className]) ||
-        (Object.keys(filteredClasses).length === 0 && classFilters[this.className]))
+      ((Object.keys(filteredClasses).length > 0 &&
+        filteredClasses[this.className]) ||
+        (Object.keys(filteredClasses).length === 0 &&
+          classFilters[this.className]))
     ) {
       const dateTime = new Date().getTime();
-      const msg = format('[%s-%s:%s] %s %s', 'WARN', this.className, pid, dateTime, message);
+      const msg = `[WARN-${this.className}:${pid}] ${dateTime} ${message}`;
       const state = {
         type: LoggerLevel.WARN,
         message,
         className: this.className,
         pid,
-        date: dateTime
+        date: dateTime,
       } as any;
 
       if (object) state.meta = object;
@@ -134,17 +143,20 @@ export class Logger {
   info(message: string, object?: unknown): void {
     if (
       this.isInfo() &&
-      ((Object.keys(filteredClasses).length > 0 && filteredClasses[this.className]) ||
-        (Object.keys(filteredClasses).length === 0 && classFilters[this.className]))
+      ((Object.keys(filteredClasses).length > 0 &&
+        filteredClasses[this.className]) ||
+        (Object.keys(filteredClasses).length === 0 &&
+          classFilters[this.className]))
     ) {
       const dateTime = new Date().getTime();
-      const msg = format('[%s-%s:%s] %s %s', 'INFO', this.className, pid, dateTime, message);
+      const msg = `[INFO-${this.className}:${pid}] ${dateTime} ${message}`;
+
       const state = {
         type: LoggerLevel.INFO,
         message,
         className: this.className,
         pid,
-        date: dateTime
+        date: dateTime,
       } as any;
 
       if (object) state.meta = object;
@@ -161,17 +173,20 @@ export class Logger {
   error(message: string, object?: unknown): void {
     if (
       this.isError() &&
-      ((Object.keys(filteredClasses).length > 0 && filteredClasses[this.className]) ||
-        (Object.keys(filteredClasses).length === 0 && classFilters[this.className]))
+      ((Object.keys(filteredClasses).length > 0 &&
+        filteredClasses[this.className]) ||
+        (Object.keys(filteredClasses).length === 0 &&
+          classFilters[this.className]))
     ) {
       const dateTime = new Date().getTime();
-      const msg = format('[%s-%s:%s] %s %s', 'ERROR', this.className, pid, dateTime, message);
+      const msg = `[ERROR-${this.className}:${pid}] ${dateTime} ${message}`;
+
       const state = {
         type: LoggerLevel.ERROR,
         message,
         className: this.className,
         pid,
-        date: dateTime
+        date: dateTime,
       } as any;
 
       if (object) state.meta = object;
@@ -186,7 +201,8 @@ export class Logger {
 
   /** Is the logger set at error level */
   isError(): boolean {
-    return level === LoggerLevel.ERROR || level === LoggerLevel.INFO || level === LoggerLevel.DEBUG;
+    return level === LoggerLevel.ERROR || level === LoggerLevel.INFO ||
+      level === LoggerLevel.DEBUG;
   }
 
   /** Is the logger set at error level */
@@ -221,8 +237,8 @@ export class Logger {
    * @param logger - Custom logging function
    */
   static setCurrentLogger(logger: LoggerFunction): void {
-    if (typeof logger !== 'function') {
-      throw new MongoInvalidArgumentError('Current logger must be a function');
+    if (typeof logger !== "function") {
+      throw new MongoInvalidArgumentError("Current logger must be a function");
     }
 
     currentLogger = logger;
@@ -235,9 +251,9 @@ export class Logger {
    * @param values - The filters to apply
    */
   static filter(type: string, values: string[]): void {
-    if (type === 'class' && Array.isArray(values)) {
+    if (type === "class" && Array.isArray(values)) {
       filteredClasses = {};
-      values.forEach(x => (filteredClasses[x] = true));
+      values.forEach((x) => (filteredClasses[x] = true));
     }
   }
 
@@ -254,7 +270,7 @@ export class Logger {
       newLevel !== LoggerLevel.WARN
     ) {
       throw new MongoInvalidArgumentError(
-        `Argument "newLevel" should be one of ${enumToString(LoggerLevel)}`
+        `Argument "newLevel" should be one of ${enumToString(LoggerLevel)}`,
       );
     }
 

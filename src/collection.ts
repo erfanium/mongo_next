@@ -1,15 +1,19 @@
 // @ts-nocheck
-import { BSONSerializeOptions, Document, resolveBSONOptions } from './bson.ts';
-import type { AnyBulkWriteOperation, BulkWriteOptions, BulkWriteResult } from './bulk/common.ts';
-import { OrderedBulkOperation } from './bulk/ordered.ts';
-import { UnorderedBulkOperation } from './bulk/unordered.ts';
-import { ChangeStream, ChangeStreamOptions } from './change_stream.ts';
-import { AggregationCursor } from './cursor/aggregation_cursor.ts';
-import { FindCursor } from './cursor/find_cursor.ts';
-import type { Db } from './db.ts';
-import { MongoInvalidArgumentError } from './error.ts';
-import type { Logger, LoggerOptions } from './logger.ts';
-import type { PkFactory } from './mongo_client.ts';
+import { BSONSerializeOptions, Document, resolveBSONOptions } from "./bson.ts";
+import type {
+  AnyBulkWriteOperation,
+  BulkWriteOptions,
+  BulkWriteResult,
+} from "./bulk/common.ts";
+import { OrderedBulkOperation } from "./bulk/ordered.ts";
+import { UnorderedBulkOperation } from "./bulk/unordered.ts";
+import { ChangeStream, ChangeStreamOptions } from "./change_stream.ts";
+import { AggregationCursor } from "./cursor/aggregation_cursor.ts";
+import { FindCursor } from "./cursor/find_cursor.ts";
+import type { Db } from "./db.ts";
+import { MongoInvalidArgumentError } from "./error.ts";
+import type { Logger, LoggerOptions } from "./logger.ts";
+import type { PkFactory } from "./mongo_client.ts";
 import type {
   Filter,
   Flatten,
@@ -17,35 +21,41 @@ import type {
   TODO_NODE_3286,
   UpdateFilter,
   WithId,
-  WithoutId
-} from './mongo_types.ts';
-import type { AggregateOptions } from './operations/aggregate.ts';
-import { BulkWriteOperation } from './operations/bulk_write.ts';
-import type { IndexInformationOptions } from './operations/common_functions.ts';
-import { CountOperation, CountOptions } from './operations/count.ts';
-import { CountDocumentsOperation, CountDocumentsOptions } from './operations/count_documents.ts';
+  WithoutId,
+} from "./mongo_types.ts";
+import type { AggregateOptions } from "./operations/aggregate.ts";
+import { BulkWriteOperation } from "./operations/bulk_write.ts";
+import type { IndexInformationOptions } from "./operations/common_functions.ts";
+import { CountOperation, CountOptions } from "./operations/count.ts";
+import {
+  CountDocumentsOperation,
+  CountDocumentsOptions,
+} from "./operations/count_documents.ts";
 import {
   DeleteManyOperation,
   DeleteOneOperation,
   DeleteOptions,
-  DeleteResult
-} from './operations/delete.ts';
-import { DistinctOperation, DistinctOptions } from './operations/distinct.ts';
-import { DropCollectionOperation, DropCollectionOptions } from './operations/drop.ts';
+  DeleteResult,
+} from "./operations/delete.ts";
+import { DistinctOperation, DistinctOptions } from "./operations/distinct.ts";
+import {
+  DropCollectionOperation,
+  DropCollectionOptions,
+} from "./operations/drop.ts";
 import {
   EstimatedDocumentCountOperation,
-  EstimatedDocumentCountOptions
-} from './operations/estimated_document_count.ts';
-import { executeOperation } from './operations/execute_operation.ts';
-import type { FindOptions } from './operations/find.ts';
+  EstimatedDocumentCountOptions,
+} from "./operations/estimated_document_count.ts";
+import { executeOperation } from "./operations/execute_operation.ts";
+import type { FindOptions } from "./operations/find.ts";
 import {
   FindOneAndDeleteOperation,
   FindOneAndDeleteOptions,
   FindOneAndReplaceOperation,
   FindOneAndReplaceOptions,
   FindOneAndUpdateOperation,
-  FindOneAndUpdateOptions
-} from './operations/find_and_modify.ts';
+  FindOneAndUpdateOptions,
+} from "./operations/find_and_modify.ts";
 import {
   CreateIndexesOperation,
   CreateIndexesOptions,
@@ -59,36 +69,40 @@ import {
   IndexInformationOperation,
   IndexSpecification,
   ListIndexesCursor,
-  ListIndexesOptions
-} from './operations/indexes.ts';
+  ListIndexesOptions,
+} from "./operations/indexes.ts";
 import {
   InsertManyOperation,
   InsertManyResult,
   InsertOneOperation,
   InsertOneOptions,
-  InsertOneResult
-} from './operations/insert.ts';
-import { IsCappedOperation } from './operations/is_capped.ts';
+  InsertOneResult,
+} from "./operations/insert.ts";
+import { IsCappedOperation } from "./operations/is_capped.ts";
 import {
   MapFunction,
   MapReduceOperation,
   MapReduceOptions,
-  ReduceFunction
-} from './operations/map_reduce.ts';
-import type { Hint, OperationOptions } from './operations/operation.ts';
-import { OptionsOperation } from './operations/options_operation.ts';
-import { RenameOperation, RenameOptions } from './operations/rename.ts';
-import { CollStats, CollStatsOperation, CollStatsOptions } from './operations/stats.ts';
+  ReduceFunction,
+} from "./operations/map_reduce.ts";
+import type { Hint, OperationOptions } from "./operations/operation.ts";
+import { OptionsOperation } from "./operations/options_operation.ts";
+import { RenameOperation, RenameOptions } from "./operations/rename.ts";
+import {
+  CollStats,
+  CollStatsOperation,
+  CollStatsOptions,
+} from "./operations/stats.ts";
 import {
   ReplaceOneOperation,
   ReplaceOptions,
   UpdateManyOperation,
   UpdateOneOperation,
   UpdateOptions,
-  UpdateResult
-} from './operations/update.ts';
-import { ReadConcern, ReadConcernLike } from './read_concern.ts';
-import { ReadPreference, ReadPreferenceLike } from './read_preference.ts';
+  UpdateResult,
+} from "./operations/update.ts";
+import { ReadConcern, ReadConcernLike } from "./read_concern.ts";
+import { ReadPreference, ReadPreferenceLike } from "./read_preference.ts";
 import {
   Callback,
   checkCollectionName,
@@ -97,9 +111,9 @@ import {
   getTopology,
   MongoDBNamespace,
   normalizeHintField,
-  resolveOptions
-} from './utils.ts';
-import { WriteConcern, WriteConcernOptions } from './write_concern.ts';
+  resolveOptions,
+} from "./utils.ts";
+import { WriteConcern, WriteConcernOptions } from "./write_concern.ts";
 
 /** @public */
 export interface ModifyResult<TSchema = Document> {
@@ -110,9 +124,7 @@ export interface ModifyResult<TSchema = Document> {
 
 /** @public */
 export interface CollectionOptions
-  extends BSONSerializeOptions,
-    WriteConcernOptions,
-    LoggerOptions {
+  extends BSONSerializeOptions, WriteConcernOptions, LoggerOptions {
   /**
    * @deprecated Use readPreference instead
    */
@@ -184,7 +196,7 @@ export class Collection<TSchema extends Document = Document> {
       readPreference: ReadPreference.fromOptions(options),
       bsonOptions: resolveBSONOptions(options, db),
       readConcern: ReadConcern.fromOptions(options),
-      writeConcern: WriteConcern.fromOptions(options)
+      writeConcern: WriteConcern.fromOptions(options),
     };
   }
 
@@ -266,34 +278,38 @@ export class Collection<TSchema extends Document = Document> {
    * @param options - Optional settings for the command
    * @param callback - An optional callback, a Promise will be returned if none is provided
    */
-  insertOne(doc: OptionalUnlessRequiredId<TSchema>): Promise<InsertOneResult<TSchema>>;
   insertOne(
     doc: OptionalUnlessRequiredId<TSchema>,
-    callback: Callback<InsertOneResult<TSchema>>
+  ): Promise<InsertOneResult<TSchema>>;
+  insertOne(
+    doc: OptionalUnlessRequiredId<TSchema>,
+    callback: Callback<InsertOneResult<TSchema>>,
   ): void;
   insertOne(
     doc: OptionalUnlessRequiredId<TSchema>,
-    options: InsertOneOptions
+    options: InsertOneOptions,
   ): Promise<InsertOneResult<TSchema>>;
   insertOne(
     doc: OptionalUnlessRequiredId<TSchema>,
     options: InsertOneOptions,
-    callback: Callback<InsertOneResult<TSchema>>
+    callback: Callback<InsertOneResult<TSchema>>,
   ): void;
   insertOne(
     doc: OptionalUnlessRequiredId<TSchema>,
     options?: InsertOneOptions | Callback<InsertOneResult<TSchema>>,
-    callback?: Callback<InsertOneResult<TSchema>>
+    callback?: Callback<InsertOneResult<TSchema>>,
   ): Promise<InsertOneResult<TSchema>> | void {
-    if (typeof options === 'function') {
+    if (typeof options === "function") {
       callback = options;
       options = {};
     }
 
     // CSFLE passes in { w: 'majority' } to ensure the lib works in both 3.x and 4.x
     // we support that option style here only
-    if (options && Reflect.get(options, 'w')) {
-      options.writeConcern = WriteConcern.fromOptions(Reflect.get(options, 'w'));
+    if (options && Reflect.get(options, "w")) {
+      options.writeConcern = WriteConcern.fromOptions(
+        Reflect.get(options, "w"),
+      );
     }
 
     return executeOperation(
@@ -301,9 +317,9 @@ export class Collection<TSchema extends Document = Document> {
       new InsertOneOperation(
         this as TODO_NODE_3286,
         doc,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -316,26 +332,28 @@ export class Collection<TSchema extends Document = Document> {
    * @param options - Optional settings for the command
    * @param callback - An optional callback, a Promise will be returned if none is provided
    */
-  insertMany(docs: OptionalUnlessRequiredId<TSchema>[]): Promise<InsertManyResult<TSchema>>;
   insertMany(
     docs: OptionalUnlessRequiredId<TSchema>[],
-    callback: Callback<InsertManyResult<TSchema>>
+  ): Promise<InsertManyResult<TSchema>>;
+  insertMany(
+    docs: OptionalUnlessRequiredId<TSchema>[],
+    callback: Callback<InsertManyResult<TSchema>>,
   ): void;
   insertMany(
     docs: OptionalUnlessRequiredId<TSchema>[],
-    options: BulkWriteOptions
+    options: BulkWriteOptions,
   ): Promise<InsertManyResult<TSchema>>;
   insertMany(
     docs: OptionalUnlessRequiredId<TSchema>[],
     options: BulkWriteOptions,
-    callback: Callback<InsertManyResult<TSchema>>
+    callback: Callback<InsertManyResult<TSchema>>,
   ): void;
   insertMany(
     docs: OptionalUnlessRequiredId<TSchema>[],
     options?: BulkWriteOptions | Callback<InsertManyResult<TSchema>>,
-    callback?: Callback<InsertManyResult<TSchema>>
+    callback?: Callback<InsertManyResult<TSchema>>,
   ): Promise<InsertManyResult<TSchema>> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ? Object.assign({}, options) : { ordered: true };
 
     return executeOperation(
@@ -343,9 +361,9 @@ export class Collection<TSchema extends Document = Document> {
       new InsertManyOperation(
         this as TODO_NODE_3286,
         docs,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -368,7 +386,7 @@ export class Collection<TSchema extends Document = Document> {
    *  { deleteMany: { filter: {c:1} } }
    *
    *  { replaceOne: { filter: {c:3}, replacement: {c:4}, upsert:true} }
-   *```
+   * ```
    * Please note that raw operations are no longer accepted as of driver version 4.0.
    *
    * If documents passed in do not contain the **_id** field,
@@ -380,30 +398,34 @@ export class Collection<TSchema extends Document = Document> {
    * @param callback - An optional callback, a Promise will be returned if none is provided
    * @throws MongoDriverError if operations is not an array
    */
-  bulkWrite(operations: AnyBulkWriteOperation<TSchema>[]): Promise<BulkWriteResult>;
   bulkWrite(
     operations: AnyBulkWriteOperation<TSchema>[],
-    callback: Callback<BulkWriteResult>
+  ): Promise<BulkWriteResult>;
+  bulkWrite(
+    operations: AnyBulkWriteOperation<TSchema>[],
+    callback: Callback<BulkWriteResult>,
   ): void;
   bulkWrite(
     operations: AnyBulkWriteOperation<TSchema>[],
-    options: BulkWriteOptions
+    options: BulkWriteOptions,
   ): Promise<BulkWriteResult>;
   bulkWrite(
     operations: AnyBulkWriteOperation<TSchema>[],
     options: BulkWriteOptions,
-    callback: Callback<BulkWriteResult>
+    callback: Callback<BulkWriteResult>,
   ): void;
   bulkWrite(
     operations: AnyBulkWriteOperation<TSchema>[],
     options?: BulkWriteOptions | Callback<BulkWriteResult>,
-    callback?: Callback<BulkWriteResult>
+    callback?: Callback<BulkWriteResult>,
   ): Promise<BulkWriteResult> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options || { ordered: true };
 
     if (!Array.isArray(operations)) {
-      throw new MongoInvalidArgumentError('Argument "operations" must be an array of documents');
+      throw new MongoInvalidArgumentError(
+        'Argument "operations" must be an array of documents',
+      );
     }
 
     return executeOperation(
@@ -411,9 +433,9 @@ export class Collection<TSchema extends Document = Document> {
       new BulkWriteOperation(
         this as TODO_NODE_3286,
         operations as TODO_NODE_3286,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ),
-      callback
+      callback,
     );
   }
 
@@ -427,31 +449,31 @@ export class Collection<TSchema extends Document = Document> {
    */
   updateOne(
     filter: Filter<TSchema>,
-    update: UpdateFilter<TSchema> | Partial<TSchema>
+    update: UpdateFilter<TSchema> | Partial<TSchema>,
   ): Promise<UpdateResult>;
   updateOne(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema> | Partial<TSchema>,
-    callback: Callback<UpdateResult>
+    callback: Callback<UpdateResult>,
   ): void;
   updateOne(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema> | Partial<TSchema>,
-    options: UpdateOptions
+    options: UpdateOptions,
   ): Promise<UpdateResult>;
   updateOne(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema> | Partial<TSchema>,
     options: UpdateOptions,
-    callback: Callback<UpdateResult>
+    callback: Callback<UpdateResult>,
   ): void;
   updateOne(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema> | Partial<TSchema>,
     options?: UpdateOptions | Callback<UpdateResult>,
-    callback?: Callback<UpdateResult>
+    callback?: Callback<UpdateResult>,
   ): Promise<UpdateResult> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
@@ -459,9 +481,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         filter,
         update,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -475,31 +497,31 @@ export class Collection<TSchema extends Document = Document> {
    */
   replaceOne(
     filter: Filter<TSchema>,
-    replacement: WithoutId<TSchema>
+    replacement: WithoutId<TSchema>,
   ): Promise<UpdateResult | Document>;
   replaceOne(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void;
   replaceOne(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
-    options: ReplaceOptions
+    options: ReplaceOptions,
   ): Promise<UpdateResult | Document>;
   replaceOne(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
     options: ReplaceOptions,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void;
   replaceOne(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
     options?: ReplaceOptions | Callback<UpdateResult | Document>,
-    callback?: Callback<UpdateResult | Document>
+    callback?: Callback<UpdateResult | Document>,
   ): Promise<UpdateResult | Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
@@ -507,9 +529,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         filter,
         replacement,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ),
-      callback
+      callback,
     );
   }
 
@@ -523,31 +545,31 @@ export class Collection<TSchema extends Document = Document> {
    */
   updateMany(
     filter: Filter<TSchema>,
-    update: UpdateFilter<TSchema>
+    update: UpdateFilter<TSchema>,
   ): Promise<UpdateResult | Document>;
   updateMany(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void;
   updateMany(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
-    options: UpdateOptions
+    options: UpdateOptions,
   ): Promise<UpdateResult | Document>;
   updateMany(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
     options: UpdateOptions,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void;
   updateMany(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
     options?: UpdateOptions | Callback<UpdateResult | Document>,
-    callback?: Callback<UpdateResult | Document>
+    callback?: Callback<UpdateResult | Document>,
   ): Promise<UpdateResult | Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
@@ -555,9 +577,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         filter,
         update,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ),
-      callback
+      callback,
     );
   }
 
@@ -570,23 +592,30 @@ export class Collection<TSchema extends Document = Document> {
    */
   deleteOne(filter: Filter<TSchema>): Promise<DeleteResult>;
   deleteOne(filter: Filter<TSchema>, callback: Callback<DeleteResult>): void;
-  deleteOne(filter: Filter<TSchema>, options: DeleteOptions): Promise<DeleteResult>;
   deleteOne(
     filter: Filter<TSchema>,
     options: DeleteOptions,
-    callback?: Callback<DeleteResult>
+  ): Promise<DeleteResult>;
+  deleteOne(
+    filter: Filter<TSchema>,
+    options: DeleteOptions,
+    callback?: Callback<DeleteResult>,
   ): void;
   deleteOne(
     filter: Filter<TSchema>,
     options?: DeleteOptions | Callback<DeleteResult>,
-    callback?: Callback<DeleteResult>
+    callback?: Callback<DeleteResult>,
   ): Promise<DeleteResult> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new DeleteOneOperation(this as TODO_NODE_3286, filter, resolveOptions(this, options)),
-      callback
+      new DeleteOneOperation(
+        this as TODO_NODE_3286,
+        filter,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -599,34 +628,41 @@ export class Collection<TSchema extends Document = Document> {
    */
   deleteMany(filter: Filter<TSchema>): Promise<DeleteResult>;
   deleteMany(filter: Filter<TSchema>, callback: Callback<DeleteResult>): void;
-  deleteMany(filter: Filter<TSchema>, options: DeleteOptions): Promise<DeleteResult>;
   deleteMany(
     filter: Filter<TSchema>,
     options: DeleteOptions,
-    callback: Callback<DeleteResult>
+  ): Promise<DeleteResult>;
+  deleteMany(
+    filter: Filter<TSchema>,
+    options: DeleteOptions,
+    callback: Callback<DeleteResult>,
   ): void;
   deleteMany(
     filter: Filter<TSchema>,
     options?: DeleteOptions | Callback<DeleteResult>,
-    callback?: Callback<DeleteResult>
+    callback?: Callback<DeleteResult>,
   ): Promise<DeleteResult> | void {
     if (filter == null) {
       filter = {};
       options = {};
       callback = undefined;
-    } else if (typeof filter === 'function') {
+    } else if (typeof filter === "function") {
       callback = filter as Callback<DeleteResult>;
       filter = {};
       options = {};
-    } else if (typeof options === 'function') {
+    } else if (typeof options === "function") {
       callback = options;
       options = {};
     }
 
     return executeOperation(
       this,
-      new DeleteManyOperation(this as TODO_NODE_3286, filter, resolveOptions(this, options)),
-      callback
+      new DeleteManyOperation(
+        this as TODO_NODE_3286,
+        filter,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -643,22 +679,26 @@ export class Collection<TSchema extends Document = Document> {
   rename(newName: string): Promise<Collection>;
   rename(newName: string, callback: Callback<Collection>): void;
   rename(newName: string, options: RenameOptions): Promise<Collection>;
-  rename(newName: string, options: RenameOptions, callback: Callback<Collection>): void;
+  rename(
+    newName: string,
+    options: RenameOptions,
+    callback: Callback<Collection>,
+  ): void;
   rename(
     newName: string,
     options?: RenameOptions | Callback<Collection>,
-    callback?: Callback<Collection>
+    callback?: Callback<Collection>,
   ): Promise<Collection> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     // Intentionally, we do not inherit options from parent for this operation.
     return executeOperation(
       this,
       new RenameOperation(this as TODO_NODE_3286, newName, {
         ...options,
-        readPreference: ReadPreference.PRIMARY
+        readPreference: ReadPreference.PRIMARY,
       }),
-      callback
+      callback,
     );
   }
 
@@ -674,15 +714,15 @@ export class Collection<TSchema extends Document = Document> {
   drop(options: DropCollectionOptions, callback: Callback<boolean>): void;
   drop(
     options?: DropCollectionOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     return executeOperation(
       this,
       new DropCollectionOperation(this.s.db, this.collectionName, options),
-      callback
+      callback,
     );
   }
 
@@ -696,49 +736,60 @@ export class Collection<TSchema extends Document = Document> {
   findOne(): Promise<WithId<TSchema> | null>;
   findOne(callback: Callback<WithId<TSchema> | null>): void;
   findOne(filter: Filter<TSchema>): Promise<WithId<TSchema> | null>;
-  findOne(filter: Filter<TSchema>, callback: Callback<WithId<TSchema> | null>): void;
-  findOne(filter: Filter<TSchema>, options: FindOptions): Promise<WithId<TSchema> | null>;
+  findOne(
+    filter: Filter<TSchema>,
+    callback: Callback<WithId<TSchema> | null>,
+  ): void;
   findOne(
     filter: Filter<TSchema>,
     options: FindOptions,
-    callback: Callback<WithId<TSchema> | null>
+  ): Promise<WithId<TSchema> | null>;
+  findOne(
+    filter: Filter<TSchema>,
+    options: FindOptions,
+    callback: Callback<WithId<TSchema> | null>,
   ): void;
 
   // allow an override of the schema.
   findOne<T = TSchema>(): Promise<T | null>;
   findOne<T = TSchema>(callback: Callback<T | null>): void;
   findOne<T = TSchema>(filter: Filter<TSchema>): Promise<T | null>;
-  findOne<T = TSchema>(filter: Filter<TSchema>, options?: FindOptions): Promise<T | null>;
   findOne<T = TSchema>(
     filter: Filter<TSchema>,
     options?: FindOptions,
-    callback?: Callback<T | null>
+  ): Promise<T | null>;
+  findOne<T = TSchema>(
+    filter: Filter<TSchema>,
+    options?: FindOptions,
+    callback?: Callback<T | null>,
   ): void;
 
   findOne(
     filter?: Filter<TSchema> | Callback<WithId<TSchema> | null>,
     options?: FindOptions | Callback<WithId<TSchema> | null>,
-    callback?: Callback<WithId<TSchema> | null>
+    callback?: Callback<WithId<TSchema> | null>,
   ): Promise<WithId<TSchema> | null> | void {
-    if (callback != null && typeof callback !== 'function') {
+    if (callback != null && typeof callback !== "function") {
       throw new MongoInvalidArgumentError(
-        'Third parameter to `findOne()` must be a callback or undefined'
+        "Third parameter to `findOne()` must be a callback or undefined",
       );
     }
 
-    if (typeof filter === 'function') {
+    if (typeof filter === "function") {
       callback = filter as Callback<WithId<TSchema> | null>;
       filter = {};
       options = {};
     }
-    if (typeof options === 'function') {
+    if (typeof options === "function") {
       callback = options;
       options = {};
     }
 
     const finalFilter = filter ?? {};
     const finalOptions = options ?? {};
-    return this.find(finalFilter, finalOptions).limit(-1).batchSize(1).next(callback);
+    return this.find(finalFilter, finalOptions).limit(-1).batchSize(1).next(
+      callback,
+    );
   }
 
   /**
@@ -747,23 +798,34 @@ export class Collection<TSchema extends Document = Document> {
    * @param filter - The filter predicate. If unspecified, then all documents in the collection will match the predicate
    */
   find(): FindCursor<WithId<TSchema>>;
-  find(filter: Filter<TSchema>, options?: FindOptions): FindCursor<WithId<TSchema>>;
-  find<T extends Document>(filter: Filter<TSchema>, options?: FindOptions): FindCursor<T>;
-  find(filter?: Filter<TSchema>, options?: FindOptions): FindCursor<WithId<TSchema>> {
+  find(
+    filter: Filter<TSchema>,
+    options?: FindOptions,
+  ): FindCursor<WithId<TSchema>>;
+  find<T extends Document>(
+    filter: Filter<TSchema>,
+    options?: FindOptions,
+  ): FindCursor<T>;
+  find(
+    filter?: Filter<TSchema>,
+    options?: FindOptions,
+  ): FindCursor<WithId<TSchema>> {
     if (arguments.length > 2) {
       throw new MongoInvalidArgumentError(
-        'Method "collection.find()" accepts at most two arguments'
+        'Method "collection.find()" accepts at most two arguments',
       );
     }
-    if (typeof options === 'function') {
-      throw new MongoInvalidArgumentError('Argument "options" must not be function');
+    if (typeof options === "function") {
+      throw new MongoInvalidArgumentError(
+        'Argument "options" must not be function',
+      );
     }
 
     return new FindCursor<WithId<TSchema>>(
       getTopology(this),
       this.s.namespace,
       filter,
-      resolveOptions(this as TODO_NODE_3286, options)
+      resolveOptions(this as TODO_NODE_3286, options),
     );
   }
 
@@ -779,14 +841,17 @@ export class Collection<TSchema extends Document = Document> {
   options(options: OperationOptions, callback: Callback<Document>): void;
   options(
     options?: OperationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new OptionsOperation(this as TODO_NODE_3286, resolveOptions(this, options)),
-      callback
+      new OptionsOperation(
+        this as TODO_NODE_3286,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -802,14 +867,17 @@ export class Collection<TSchema extends Document = Document> {
   isCapped(options: OperationOptions, callback: Callback<boolean>): void;
   isCapped(
     options?: OperationOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new IsCappedOperation(this as TODO_NODE_3286, resolveOptions(this, options)),
-      callback
+      new IsCappedOperation(
+        this as TODO_NODE_3286,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -844,18 +912,21 @@ export class Collection<TSchema extends Document = Document> {
    */
   createIndex(indexSpec: IndexSpecification): Promise<string>;
   createIndex(indexSpec: IndexSpecification, callback: Callback<string>): void;
-  createIndex(indexSpec: IndexSpecification, options: CreateIndexesOptions): Promise<string>;
   createIndex(
     indexSpec: IndexSpecification,
     options: CreateIndexesOptions,
-    callback: Callback<string>
+  ): Promise<string>;
+  createIndex(
+    indexSpec: IndexSpecification,
+    options: CreateIndexesOptions,
+    callback: Callback<string>,
   ): void;
   createIndex(
     indexSpec: IndexSpecification,
     options?: CreateIndexesOptions | Callback<string>,
-    callback?: Callback<string>
+    callback?: Callback<string>,
   ): Promise<string> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
@@ -863,9 +934,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         this.collectionName,
         indexSpec,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ),
-      callback
+      callback,
     );
   }
 
@@ -902,21 +973,27 @@ export class Collection<TSchema extends Document = Document> {
    * ```
    */
   createIndexes(indexSpecs: IndexDescription[]): Promise<string[]>;
-  createIndexes(indexSpecs: IndexDescription[], callback: Callback<string[]>): void;
-  createIndexes(indexSpecs: IndexDescription[], options: CreateIndexesOptions): Promise<string[]>;
+  createIndexes(
+    indexSpecs: IndexDescription[],
+    callback: Callback<string[]>,
+  ): void;
   createIndexes(
     indexSpecs: IndexDescription[],
     options: CreateIndexesOptions,
-    callback: Callback<string[]>
+  ): Promise<string[]>;
+  createIndexes(
+    indexSpecs: IndexDescription[],
+    options: CreateIndexesOptions,
+    callback: Callback<string[]>,
   ): void;
   createIndexes(
     indexSpecs: IndexDescription[],
     options?: CreateIndexesOptions | Callback<string[]>,
-    callback?: Callback<string[]>
+    callback?: Callback<string[]>,
   ): Promise<string[]> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ? Object.assign({}, options) : {};
-    if (typeof options.maxTimeMS !== 'number') delete options.maxTimeMS;
+    if (typeof options.maxTimeMS !== "number") delete options.maxTimeMS;
 
     return executeOperation(
       this,
@@ -924,9 +1001,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         this.collectionName,
         indexSpecs,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ),
-      callback
+      callback,
     );
   }
 
@@ -940,13 +1017,17 @@ export class Collection<TSchema extends Document = Document> {
   dropIndex(indexName: string): Promise<Document>;
   dropIndex(indexName: string, callback: Callback<Document>): void;
   dropIndex(indexName: string, options: DropIndexesOptions): Promise<Document>;
-  dropIndex(indexName: string, options: DropIndexesOptions, callback: Callback<Document>): void;
+  dropIndex(
+    indexName: string,
+    options: DropIndexesOptions,
+    callback: Callback<Document>,
+  ): void;
   dropIndex(
     indexName: string,
     options?: DropIndexesOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = resolveOptions(this, options);
 
     // Run only against primary
@@ -955,7 +1036,7 @@ export class Collection<TSchema extends Document = Document> {
     return executeOperation(
       this,
       new DropIndexOperation(this as TODO_NODE_3286, indexName, options),
-      callback
+      callback,
     );
   }
 
@@ -971,14 +1052,17 @@ export class Collection<TSchema extends Document = Document> {
   dropIndexes(options: DropIndexesOptions, callback: Callback<Document>): void;
   dropIndexes(
     options?: DropIndexesOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new DropIndexesOperation(this as TODO_NODE_3286, resolveOptions(this, options)),
-      callback
+      new DropIndexesOperation(
+        this as TODO_NODE_3286,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -988,7 +1072,10 @@ export class Collection<TSchema extends Document = Document> {
    * @param options - Optional settings for the command
    */
   listIndexes(options?: ListIndexesOptions): ListIndexesCursor {
-    return new ListIndexesCursor(this as TODO_NODE_3286, resolveOptions(this, options));
+    return new ListIndexesCursor(
+      this as TODO_NODE_3286,
+      resolveOptions(this, options),
+    );
   }
 
   /**
@@ -1000,23 +1087,30 @@ export class Collection<TSchema extends Document = Document> {
    */
   indexExists(indexes: string | string[]): Promise<boolean>;
   indexExists(indexes: string | string[], callback: Callback<boolean>): void;
-  indexExists(indexes: string | string[], options: IndexInformationOptions): Promise<boolean>;
   indexExists(
     indexes: string | string[],
     options: IndexInformationOptions,
-    callback: Callback<boolean>
+  ): Promise<boolean>;
+  indexExists(
+    indexes: string | string[],
+    options: IndexInformationOptions,
+    callback: Callback<boolean>,
   ): void;
   indexExists(
     indexes: string | string[],
     options?: IndexInformationOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new IndexExistsOperation(this as TODO_NODE_3286, indexes, resolveOptions(this, options)),
-      callback
+      new IndexExistsOperation(
+        this as TODO_NODE_3286,
+        indexes,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -1029,17 +1123,24 @@ export class Collection<TSchema extends Document = Document> {
   indexInformation(): Promise<Document>;
   indexInformation(callback: Callback<Document>): void;
   indexInformation(options: IndexInformationOptions): Promise<Document>;
-  indexInformation(options: IndexInformationOptions, callback: Callback<Document>): void;
+  indexInformation(
+    options: IndexInformationOptions,
+    callback: Callback<Document>,
+  ): void;
   indexInformation(
     options?: IndexInformationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new IndexInformationOperation(this.s.db, this.collectionName, resolveOptions(this, options)),
-      callback
+      new IndexInformationOperation(
+        this.s.db,
+        this.collectionName,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -1051,17 +1152,25 @@ export class Collection<TSchema extends Document = Document> {
    */
   estimatedDocumentCount(): Promise<number>;
   estimatedDocumentCount(callback: Callback<number>): void;
-  estimatedDocumentCount(options: EstimatedDocumentCountOptions): Promise<number>;
-  estimatedDocumentCount(options: EstimatedDocumentCountOptions, callback: Callback<number>): void;
+  estimatedDocumentCount(
+    options: EstimatedDocumentCountOptions,
+  ): Promise<number>;
+  estimatedDocumentCount(
+    options: EstimatedDocumentCountOptions,
+    callback: Callback<number>,
+  ): void;
   estimatedDocumentCount(
     options?: EstimatedDocumentCountOptions | Callback<number>,
-    callback?: Callback<number>
+    callback?: Callback<number>,
   ): Promise<number> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     return executeOperation(
       this,
-      new EstimatedDocumentCountOperation(this as TODO_NODE_3286, resolveOptions(this, options)),
-      callback
+      new EstimatedDocumentCountOperation(
+        this as TODO_NODE_3286,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -1095,25 +1204,28 @@ export class Collection<TSchema extends Document = Document> {
   countDocuments(callback: Callback<number>): void;
   countDocuments(filter: Filter<TSchema>): Promise<number>;
   countDocuments(callback: Callback<number>): void;
-  countDocuments(filter: Filter<TSchema>, options: CountDocumentsOptions): Promise<number>;
   countDocuments(
     filter: Filter<TSchema>,
     options: CountDocumentsOptions,
-    callback: Callback<number>
+  ): Promise<number>;
+  countDocuments(
+    filter: Filter<TSchema>,
+    options: CountDocumentsOptions,
+    callback: Callback<number>,
   ): void;
   countDocuments(filter: Filter<TSchema>, callback: Callback<number>): void;
   countDocuments(
     filter?: Document | CountDocumentsOptions | Callback<number>,
     options?: CountDocumentsOptions | Callback<number>,
-    callback?: Callback<number>
+    callback?: Callback<number>,
   ): Promise<number> | void {
     if (filter == null) {
       (filter = {}), (options = {}), (callback = undefined);
-    } else if (typeof filter === 'function') {
+    } else if (typeof filter === "function") {
       (callback = filter as Callback<number>), (filter = {}), (options = {});
     } else {
       if (arguments.length === 2) {
-        if (typeof options === 'function') (callback = options), (options = {});
+        if (typeof options === "function") (callback = options), (options = {});
       }
     }
 
@@ -1123,9 +1235,9 @@ export class Collection<TSchema extends Document = Document> {
       new CountDocumentsOperation(
         this as TODO_NODE_3286,
         filter as Document,
-        resolveOptions(this, options as CountDocumentsOptions)
+        resolveOptions(this, options as CountDocumentsOptions),
       ),
-      callback
+      callback,
     );
   }
 
@@ -1138,56 +1250,64 @@ export class Collection<TSchema extends Document = Document> {
    * @param callback - An optional callback, a Promise will be returned if none is provided
    */
   distinct<Key extends keyof WithId<TSchema>>(
-    key: Key
+    key: Key,
   ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>;
   distinct<Key extends keyof WithId<TSchema>>(
     key: Key,
-    callback: Callback<Array<Flatten<WithId<TSchema>[Key]>>>
-  ): void;
-  distinct<Key extends keyof WithId<TSchema>>(
-    key: Key,
-    filter: Filter<TSchema>
-  ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>;
-  distinct<Key extends keyof WithId<TSchema>>(
-    key: Key,
-    filter: Filter<TSchema>,
-    callback: Callback<Array<Flatten<WithId<TSchema>[Key]>>>
+    callback: Callback<Array<Flatten<WithId<TSchema>[Key]>>>,
   ): void;
   distinct<Key extends keyof WithId<TSchema>>(
     key: Key,
     filter: Filter<TSchema>,
-    options: DistinctOptions
+  ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>;
+  distinct<Key extends keyof WithId<TSchema>>(
+    key: Key,
+    filter: Filter<TSchema>,
+    callback: Callback<Array<Flatten<WithId<TSchema>[Key]>>>,
+  ): void;
+  distinct<Key extends keyof WithId<TSchema>>(
+    key: Key,
+    filter: Filter<TSchema>,
+    options: DistinctOptions,
   ): Promise<Array<Flatten<WithId<TSchema>[Key]>>>;
   distinct<Key extends keyof WithId<TSchema>>(
     key: Key,
     filter: Filter<TSchema>,
     options: DistinctOptions,
-    callback: Callback<Array<Flatten<WithId<TSchema>[Key]>>>
+    callback: Callback<Array<Flatten<WithId<TSchema>[Key]>>>,
   ): void;
 
   // Embedded documents overload
   distinct(key: string): Promise<any[]>;
   distinct(key: string, callback: Callback<any[]>): void;
   distinct(key: string, filter: Filter<TSchema>): Promise<any[]>;
-  distinct(key: string, filter: Filter<TSchema>, callback: Callback<any[]>): void;
-  distinct(key: string, filter: Filter<TSchema>, options: DistinctOptions): Promise<any[]>;
+  distinct(
+    key: string,
+    filter: Filter<TSchema>,
+    callback: Callback<any[]>,
+  ): void;
   distinct(
     key: string,
     filter: Filter<TSchema>,
     options: DistinctOptions,
-    callback: Callback<any[]>
+  ): Promise<any[]>;
+  distinct(
+    key: string,
+    filter: Filter<TSchema>,
+    options: DistinctOptions,
+    callback: Callback<any[]>,
   ): void;
   // Implementation
   distinct<Key extends keyof WithId<TSchema>>(
     key: Key,
     filter?: Filter<TSchema> | DistinctOptions | Callback<any[]>,
     options?: DistinctOptions | Callback<any[]>,
-    callback?: Callback<any[]>
+    callback?: Callback<any[]>,
   ): Promise<any[]> | void {
-    if (typeof filter === 'function') {
+    if (typeof filter === "function") {
       (callback = filter as Callback<any[]>), (filter = {}), (options = {});
     } else {
-      if (arguments.length === 3 && typeof options === 'function') {
+      if (arguments.length === 3 && typeof options === "function") {
         (callback = options), (options = {});
       }
     }
@@ -1199,9 +1319,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         key as TODO_NODE_3286,
         filter,
-        resolveOptions(this, options as DistinctOptions)
+        resolveOptions(this, options as DistinctOptions),
       ),
-      callback
+      callback,
     );
   }
 
@@ -1214,17 +1334,23 @@ export class Collection<TSchema extends Document = Document> {
   indexes(): Promise<Document[]>;
   indexes(callback: Callback<Document[]>): void;
   indexes(options: IndexInformationOptions): Promise<Document[]>;
-  indexes(options: IndexInformationOptions, callback: Callback<Document[]>): void;
+  indexes(
+    options: IndexInformationOptions,
+    callback: Callback<Document[]>,
+  ): void;
   indexes(
     options?: IndexInformationOptions | Callback<Document[]>,
-    callback?: Callback<Document[]>
+    callback?: Callback<Document[]>,
   ): Promise<Document[]> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new IndexesOperation(this as TODO_NODE_3286, resolveOptions(this, options)),
-      callback
+      new IndexesOperation(
+        this as TODO_NODE_3286,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -1240,15 +1366,15 @@ export class Collection<TSchema extends Document = Document> {
   stats(options: CollStatsOptions, callback: Callback<CollStats>): void;
   stats(
     options?: CollStatsOptions | Callback<CollStats>,
-    callback?: Callback<CollStats>
+    callback?: Callback<CollStats>,
   ): Promise<CollStats> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     return executeOperation(
       this,
       new CollStatsOperation(this as TODO_NODE_3286, options),
-      callback
+      callback,
     );
   }
 
@@ -1262,29 +1388,32 @@ export class Collection<TSchema extends Document = Document> {
   findOneAndDelete(filter: Filter<TSchema>): Promise<ModifyResult<TSchema>>;
   findOneAndDelete(
     filter: Filter<TSchema>,
-    options: FindOneAndDeleteOptions
+    options: FindOneAndDeleteOptions,
   ): Promise<ModifyResult<TSchema>>;
-  findOneAndDelete(filter: Filter<TSchema>, callback: Callback<ModifyResult<TSchema>>): void;
+  findOneAndDelete(
+    filter: Filter<TSchema>,
+    callback: Callback<ModifyResult<TSchema>>,
+  ): void;
   findOneAndDelete(
     filter: Filter<TSchema>,
     options: FindOneAndDeleteOptions,
-    callback: Callback<ModifyResult<TSchema>>
+    callback: Callback<ModifyResult<TSchema>>,
   ): void;
   findOneAndDelete(
     filter: Filter<TSchema>,
     options?: FindOneAndDeleteOptions | Callback<ModifyResult<TSchema>>,
-    callback?: Callback<ModifyResult<TSchema>>
+    callback?: Callback<ModifyResult<TSchema>>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new FindOneAndDeleteOperation(
         this as TODO_NODE_3286,
         filter,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -1298,31 +1427,31 @@ export class Collection<TSchema extends Document = Document> {
    */
   findOneAndReplace(
     filter: Filter<TSchema>,
-    replacement: WithoutId<TSchema>
+    replacement: WithoutId<TSchema>,
   ): Promise<ModifyResult<TSchema>>;
   findOneAndReplace(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
-    callback: Callback<ModifyResult<TSchema>>
+    callback: Callback<ModifyResult<TSchema>>,
   ): void;
   findOneAndReplace(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
-    options: FindOneAndReplaceOptions
+    options: FindOneAndReplaceOptions,
   ): Promise<ModifyResult<TSchema>>;
   findOneAndReplace(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
     options: FindOneAndReplaceOptions,
-    callback: Callback<ModifyResult<TSchema>>
+    callback: Callback<ModifyResult<TSchema>>,
   ): void;
   findOneAndReplace(
     filter: Filter<TSchema>,
     replacement: WithoutId<TSchema>,
     options?: FindOneAndReplaceOptions | Callback<ModifyResult<TSchema>>,
-    callback?: Callback<ModifyResult<TSchema>>
+    callback?: Callback<ModifyResult<TSchema>>,
   ): Promise<ModifyResult<TSchema>> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
@@ -1330,9 +1459,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         filter,
         replacement,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -1346,31 +1475,31 @@ export class Collection<TSchema extends Document = Document> {
    */
   findOneAndUpdate(
     filter: Filter<TSchema>,
-    update: UpdateFilter<TSchema>
+    update: UpdateFilter<TSchema>,
   ): Promise<ModifyResult<TSchema>>;
   findOneAndUpdate(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
-    callback: Callback<ModifyResult<TSchema>>
+    callback: Callback<ModifyResult<TSchema>>,
   ): void;
   findOneAndUpdate(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
-    options: FindOneAndUpdateOptions
+    options: FindOneAndUpdateOptions,
   ): Promise<ModifyResult<TSchema>>;
   findOneAndUpdate(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
     options: FindOneAndUpdateOptions,
-    callback: Callback<ModifyResult<TSchema>>
+    callback: Callback<ModifyResult<TSchema>>,
   ): void;
   findOneAndUpdate(
     filter: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
     options?: FindOneAndUpdateOptions | Callback<ModifyResult<TSchema>>,
-    callback?: Callback<ModifyResult<TSchema>>
+    callback?: Callback<ModifyResult<TSchema>>,
   ): Promise<ModifyResult<TSchema>> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
@@ -1378,9 +1507,9 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         filter,
         update,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -1392,27 +1521,29 @@ export class Collection<TSchema extends Document = Document> {
    */
   aggregate<T extends Document = Document>(
     pipeline: Document[] = [],
-    options?: AggregateOptions
+    options?: AggregateOptions,
   ): AggregationCursor<T> {
     if (arguments.length > 2) {
       throw new MongoInvalidArgumentError(
-        'Method "collection.aggregate()" accepts at most two arguments'
+        'Method "collection.aggregate()" accepts at most two arguments',
       );
     }
     if (!Array.isArray(pipeline)) {
       throw new MongoInvalidArgumentError(
-        'Argument "pipeline" must be an array of aggregation stages'
+        'Argument "pipeline" must be an array of aggregation stages',
       );
     }
-    if (typeof options === 'function') {
-      throw new MongoInvalidArgumentError('Argument "options" must not be function');
+    if (typeof options === "function") {
+      throw new MongoInvalidArgumentError(
+        'Argument "options" must not be function',
+      );
     }
 
     return new AggregationCursor(
       getTopology(this),
       this.s.namespace,
       pipeline,
-      resolveOptions(this, options)
+      resolveOptions(this, options),
     );
   }
 
@@ -1425,7 +1556,7 @@ export class Collection<TSchema extends Document = Document> {
    */
   watch<TLocal extends Document = TSchema>(
     pipeline: Document[] = [],
-    options: ChangeStreamOptions = {}
+    options: ChangeStreamOptions = {},
   ): ChangeStream<TLocal> {
     // Allow optionally not specifying a pipeline
     if (!Array.isArray(pipeline)) {
@@ -1433,7 +1564,11 @@ export class Collection<TSchema extends Document = Document> {
       pipeline = [];
     }
 
-    return new ChangeStream<TLocal>(this, pipeline, resolveOptions(this, options));
+    return new ChangeStream<TLocal>(
+      this,
+      pipeline,
+      resolveOptions(this, options),
+    );
   }
 
   /**
@@ -1447,51 +1582,51 @@ export class Collection<TSchema extends Document = Document> {
    */
   mapReduce<TKey = any, TValue = any>(
     map: string | MapFunction<TSchema>,
-    reduce: string | ReduceFunction<TKey, TValue>
+    reduce: string | ReduceFunction<TKey, TValue>,
   ): Promise<Document | Document[]>;
   mapReduce<TKey = any, TValue = any>(
     map: string | MapFunction<TSchema>,
     reduce: string | ReduceFunction<TKey, TValue>,
-    callback: Callback<Document | Document[]>
+    callback: Callback<Document | Document[]>,
   ): void;
   mapReduce<TKey = any, TValue = any>(
     map: string | MapFunction<TSchema>,
     reduce: string | ReduceFunction<TKey, TValue>,
-    options: MapReduceOptions<TKey, TValue>
+    options: MapReduceOptions<TKey, TValue>,
   ): Promise<Document | Document[]>;
   mapReduce<TKey = any, TValue = any>(
     map: string | MapFunction<TSchema>,
     reduce: string | ReduceFunction<TKey, TValue>,
     options: MapReduceOptions<TKey, TValue>,
-    callback: Callback<Document | Document[]>
+    callback: Callback<Document | Document[]>,
   ): void;
   mapReduce<TKey = any, TValue = any>(
     map: string | MapFunction<TSchema>,
     reduce: string | ReduceFunction<TKey, TValue>,
     options?: MapReduceOptions<TKey, TValue> | Callback<Document | Document[]>,
-    callback?: Callback<Document | Document[]>
+    callback?: Callback<Document | Document[]>,
   ): Promise<Document | Document[]> | void {
     emitWarningOnce(
-      'collection.mapReduce is deprecated. Use the aggregation pipeline instead. Visit https://docs.mongodb.com/manual/reference/map-reduce-to-aggregation-pipeline for more information on how to translate map-reduce operations to the aggregation pipeline.'
+      "collection.mapReduce is deprecated. Use the aggregation pipeline instead. Visit https://docs.mongodb.com/manual/reference/map-reduce-to-aggregation-pipeline for more information on how to translate map-reduce operations to the aggregation pipeline.",
     );
-    if ('function' === typeof options) (callback = options), (options = {});
+    if ("function" === typeof options) (callback = options), (options = {});
     // Out must always be defined (make sure we don't break weirdly on pre 1.8+ servers)
     // TODO NODE-3339: Figure out if this is still necessary given we no longer officially support pre-1.8
     if (options?.out == null) {
       throw new MongoInvalidArgumentError(
-        'Option "out" must be defined, see mongodb docs for possible values'
+        'Option "out" must be defined, see mongodb docs for possible values',
       );
     }
 
-    if ('function' === typeof map) {
+    if ("function" === typeof map) {
       map = map.toString();
     }
 
-    if ('function' === typeof reduce) {
+    if ("function" === typeof reduce) {
       reduce = reduce.toString();
     }
 
-    if ('function' === typeof options.finalize) {
+    if ("function" === typeof options.finalize) {
       options.finalize = options.finalize.toString();
     }
 
@@ -1501,20 +1636,28 @@ export class Collection<TSchema extends Document = Document> {
         this as TODO_NODE_3286,
         map,
         reduce,
-        resolveOptions(this, options) as TODO_NODE_3286
+        resolveOptions(this, options) as TODO_NODE_3286,
       ),
-      callback
+      callback,
     );
   }
 
   /** Initiate an Out of order batch write operation. All operations will be buffered into insert/update/remove commands executed out of order. */
-  initializeUnorderedBulkOp(options?: BulkWriteOptions): UnorderedBulkOperation {
-    return new UnorderedBulkOperation(this as TODO_NODE_3286, resolveOptions(this, options));
+  initializeUnorderedBulkOp(
+    options?: BulkWriteOptions,
+  ): UnorderedBulkOperation {
+    return new UnorderedBulkOperation(
+      this as TODO_NODE_3286,
+      resolveOptions(this, options),
+    );
   }
 
   /** Initiate an In order bulk write operation. Operations will be serially executed in the order they are added, creating a new operation for each switch in types. */
   initializeOrderedBulkOp(options?: BulkWriteOptions): OrderedBulkOperation {
-    return new OrderedBulkOperation(this as TODO_NODE_3286, resolveOptions(this, options));
+    return new OrderedBulkOperation(
+      this as TODO_NODE_3286,
+      resolveOptions(this, options),
+    );
   }
 
   /** Get the db scoped logger */
@@ -1539,12 +1682,12 @@ export class Collection<TSchema extends Document = Document> {
   insert(
     docs: OptionalUnlessRequiredId<TSchema>[],
     options: BulkWriteOptions,
-    callback: Callback<InsertManyResult<TSchema>>
+    callback: Callback<InsertManyResult<TSchema>>,
   ): Promise<InsertManyResult<TSchema>> | void {
     emitWarningOnce(
-      'collection.insert is deprecated. Use insertOne, insertMany or bulkWrite instead.'
+      "collection.insert is deprecated. Use insertOne, insertMany or bulkWrite instead.",
     );
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options || { ordered: false };
     docs = !Array.isArray(docs) ? [docs] : docs;
 
@@ -1568,12 +1711,12 @@ export class Collection<TSchema extends Document = Document> {
     selector: Filter<TSchema>,
     update: UpdateFilter<TSchema>,
     options: UpdateOptions,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): Promise<UpdateResult> | void {
     emitWarningOnce(
-      'collection.update is deprecated. Use updateOne, updateMany, or bulkWrite instead.'
+      "collection.update is deprecated. Use updateOne, updateMany, or bulkWrite instead.",
     );
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     return this.updateMany(selector, update, options, callback);
@@ -1590,12 +1733,12 @@ export class Collection<TSchema extends Document = Document> {
   remove(
     selector: Filter<TSchema>,
     options: DeleteOptions,
-    callback: Callback
+    callback: Callback,
   ): Promise<DeleteResult> | void {
     emitWarningOnce(
-      'collection.remove is deprecated. Use deleteOne, deleteMany, or bulkWrite instead.'
+      "collection.remove is deprecated. Use deleteOne, deleteMany, or bulkWrite instead.",
     );
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     return this.deleteMany(selector, options, callback);
@@ -1622,17 +1765,17 @@ export class Collection<TSchema extends Document = Document> {
   count(
     filter: Filter<TSchema>,
     options: CountOptions,
-    callback: Callback<number>
+    callback: Callback<number>,
   ): Promise<number> | void;
   count(
     filter?: Filter<TSchema> | CountOptions | Callback<number>,
     options?: CountOptions | Callback<number>,
-    callback?: Callback<number>
+    callback?: Callback<number>,
   ): Promise<number> | void {
-    if (typeof filter === 'function') {
+    if (typeof filter === "function") {
       (callback = filter as Callback<number>), (filter = {}), (options = {});
     } else {
-      if (typeof options === 'function') (callback = options), (options = {});
+      if (typeof options === "function") (callback = options), (options = {});
     }
 
     filter ??= {};
@@ -1641,9 +1784,9 @@ export class Collection<TSchema extends Document = Document> {
       new CountOperation(
         MongoDBNamespace.fromString(this.namespace),
         filter,
-        resolveOptions(this, options)
+        resolveOptions(this, options),
       ),
-      callback
+      callback,
     );
   }
 }

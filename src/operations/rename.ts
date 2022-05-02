@@ -1,12 +1,12 @@
-import type { Document } from '../bson.ts';
-import { Collection } from '../collection.ts';
-import { MongoServerError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import { Callback, checkCollectionName } from '../utils.ts';
-import type { CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
-import { RunAdminCommandOperation } from './run_command.ts';
+import type { Document } from "../bson.ts";
+import { Collection } from "../collection.ts";
+import { MongoServerError } from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import { Callback, checkCollectionName } from "../utils.ts";
+import type { CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
+import { RunAdminCommandOperation } from "./run_command.ts";
 
 /** @public */
 export interface RenameOptions extends CommandOperationOptions {
@@ -28,9 +28,16 @@ export class RenameOperation extends RunAdminCommandOperation {
 
     // Build the command
     const renameCollection = collection.namespace;
-    const toCollection = collection.s.namespace.withCollection(newName).toString();
-    const dropTarget = typeof options.dropTarget === 'boolean' ? options.dropTarget : false;
-    const cmd = { renameCollection: renameCollection, to: toCollection, dropTarget: dropTarget };
+    const toCollection = collection.s.namespace.withCollection(newName)
+      .toString();
+    const dropTarget = typeof options.dropTarget === "boolean"
+      ? options.dropTarget
+      : false;
+    const cmd = {
+      renameCollection: renameCollection,
+      to: toCollection,
+      dropTarget: dropTarget,
+    };
 
     super(collection, cmd, options);
     this.options = options;
@@ -41,7 +48,7 @@ export class RenameOperation extends RunAdminCommandOperation {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Collection>
+    callback: Callback<Collection>,
   ): void {
     const coll = this.collection;
 

@@ -1,29 +1,42 @@
-import type { TcpNetConnectOpts } from 'net';
-import type { ConnectionOptions as TLSConnectionOptions, TLSSocketOptions } from 'tls';
+import type { TcpNetConnectOpts } from "net";
+import type {
+  ConnectionOptions as TLSConnectionOptions,
+  TLSSocketOptions,
+} from "tls";
 
-import { BSONSerializeOptions, Document, resolveBSONOptions } from './bson.ts';
-import { ChangeStream, ChangeStreamOptions } from './change_stream.ts';
-import type { AuthMechanismProperties, MongoCredentials } from './cmap/auth/mongo_credentials.ts';
-import type { AuthMechanism } from './cmap/auth/providers.ts';
-import type { LEGAL_TCP_SOCKET_OPTIONS, LEGAL_TLS_SOCKET_OPTIONS } from './cmap/connect.ts';
-import type { Connection } from './cmap/connection.ts';
-import type { CompressorName } from './cmap/wire_protocol/compression.ts';
-import { parseOptions } from './connection_string.ts';
-import type { MONGO_CLIENT_EVENTS } from './constants.ts';
-import { Db, DbOptions } from './db.ts';
-import type { AutoEncrypter, AutoEncryptionOptions } from './deps.ts';
-import type { Encrypter } from './encrypter.ts';
-import { MongoInvalidArgumentError, MongoNotConnectedError } from './error.ts';
-import type { Logger, LoggerLevel } from './logger.ts';
-import { TypedEventEmitter } from './mongo_types.ts';
-import { connect } from './operations/connect.ts';
-import { PromiseProvider } from './promise_provider.ts';
-import type { ReadConcern, ReadConcernLevel, ReadConcernLike } from './read_concern.ts';
-import type { ReadPreference, ReadPreferenceMode } from './read_preference.ts';
-import type { TagSet } from './sdam/server_description.ts';
-import type { SrvPoller } from './sdam/srv_polling.ts';
-import type { Topology, TopologyEvents } from './sdam/topology.ts';
-import type { ClientSession, ClientSessionOptions } from './sessions.ts';
+import { BSONSerializeOptions, Document, resolveBSONOptions } from "./bson.ts";
+import { ChangeStream, ChangeStreamOptions } from "./change_stream.ts";
+import type {
+  AuthMechanismProperties,
+  MongoCredentials,
+} from "./cmap/auth/mongo_credentials.ts";
+import type { AuthMechanism } from "./cmap/auth/providers.ts";
+import type {
+  LEGAL_TCP_SOCKET_OPTIONS,
+  LEGAL_TLS_SOCKET_OPTIONS,
+} from "./cmap/connect.ts";
+import type { Connection } from "./cmap/connection.ts";
+import type { CompressorName } from "./cmap/wire_protocol/compression.ts";
+import { parseOptions } from "./connection_string.ts";
+import type { MONGO_CLIENT_EVENTS } from "./constants.ts";
+import { Db, DbOptions } from "./db.ts";
+import type { AutoEncrypter, AutoEncryptionOptions } from "./deps.ts";
+import type { Encrypter } from "./encrypter.ts";
+import { MongoInvalidArgumentError, MongoNotConnectedError } from "./error.ts";
+import type { Logger, LoggerLevel } from "./logger.ts";
+import { TypedEventEmitter } from "./mongo_types.ts";
+import { connect } from "./operations/connect.ts";
+import { PromiseProvider } from "./promise_provider.ts";
+import type {
+  ReadConcern,
+  ReadConcernLevel,
+  ReadConcernLike,
+} from "./read_concern.ts";
+import type { ReadPreference, ReadPreferenceMode } from "./read_preference.ts";
+import type { TagSet } from "./sdam/server_description.ts";
+import type { SrvPoller } from "./sdam/srv_polling.ts";
+import type { Topology, TopologyEvents } from "./sdam/topology.ts";
+import type { ClientSession, ClientSessionOptions } from "./sessions.ts";
 import {
   Callback,
   ClientMetadata,
@@ -31,17 +44,20 @@ import {
   maybePromise,
   MongoDBNamespace,
   ns,
-  resolveOptions
-} from './utils.ts';
-import type { W, WriteConcern } from './write_concern.ts';
+  resolveOptions,
+} from "./utils.ts";
+import type { W, WriteConcern } from "./write_concern.ts";
 
 /** @public */
-export const ServerApiVersion = Object.freeze({
-  v1: '1'
-} as const);
+export const ServerApiVersion = Object.freeze(
+  {
+    v1: "1",
+  } as const,
+);
 
 /** @public */
-export type ServerApiVersion = typeof ServerApiVersion[keyof typeof ServerApiVersion];
+export type ServerApiVersion =
+  typeof ServerApiVersion[keyof typeof ServerApiVersion];
 
 /** @public */
 export interface ServerApi {
@@ -89,16 +105,18 @@ export type SupportedSocketOptions = Pick<
 >;
 
 /** @public */
-export type SupportedNodeConnectionOptions = SupportedTLSConnectionOptions &
-  SupportedTLSSocketOptions &
-  SupportedSocketOptions;
+export type SupportedNodeConnectionOptions =
+  & SupportedTLSConnectionOptions
+  & SupportedTLSSocketOptions
+  & SupportedSocketOptions;
 
 /**
  * Describes all possible URI query options for the mongo client
  * @public
  * @see https://docs.mongodb.com/manual/reference/connection-string
  */
-export interface MongoClientOptions extends BSONSerializeOptions, SupportedNodeConnectionOptions {
+export interface MongoClientOptions
+  extends BSONSerializeOptions, SupportedNodeConnectionOptions {
   /** Specifies the name of the replica set, if the mongod is a member of a replica set. */
   replicaSet?: string;
   /** Enables or disables TLS/SSL for the connection. */
@@ -276,14 +294,16 @@ export interface MongoClientPrivate {
 }
 
 /** @public */
-export type MongoClientEvents = Pick<TopologyEvents, typeof MONGO_CLIENT_EVENTS[number]> & {
-  // In previous versions the open event emitted a topology, in an effort to no longer
-  // expose internals but continue to expose this useful event API, it now emits a mongoClient
-  open(mongoClient: MongoClient): void;
-};
+export type MongoClientEvents =
+  & Pick<TopologyEvents, typeof MONGO_CLIENT_EVENTS[number]>
+  & {
+    // In previous versions the open event emitted a topology, in an effort to no longer
+    // expose internals but continue to expose this useful event API, it now emits a mongoClient
+    open(mongoClient: MongoClient): void;
+  };
 
 /** @internal */
-const kOptions = Symbol('options');
+const kOptions = Symbol("options");
 
 /**
  * The **MongoClient** class is a class that allows for making Connections to MongoDB.
@@ -350,7 +370,7 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
       url,
       sessions: new Set(),
       bsonOptions: resolveBSONOptions(this[kOptions]),
-      namespace: ns('admin'),
+      namespace: ns("admin"),
 
       get options() {
         return client[kOptions];
@@ -366,7 +386,7 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
       },
       get logger() {
         return client[kOptions].logger;
-      }
+      },
     };
   }
 
@@ -375,7 +395,8 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
   }
 
   get serverApi(): Readonly<ServerApi | undefined> {
-    return this[kOptions].serverApi && Object.freeze({ ...this[kOptions].serverApi });
+    return this[kOptions].serverApi &&
+      Object.freeze({ ...this[kOptions].serverApi });
   }
   /**
    * Intended for APM use only
@@ -420,12 +441,14 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
   connect(): Promise<this>;
   connect(callback: Callback<this>): void;
   connect(callback?: Callback<this>): Promise<this> | void {
-    if (callback && typeof callback !== 'function') {
-      throw new MongoInvalidArgumentError('Method `connect` only accepts a callback');
+    if (callback && typeof callback !== "function") {
+      throw new MongoInvalidArgumentError(
+        "Method `connect` only accepts a callback",
+      );
     }
 
-    return maybePromise(callback, cb => {
-      connect(this, this[kOptions], err => {
+    return maybePromise(callback, (cb) => {
+      connect(this, this[kOptions], (err) => {
         if (err) return cb(err);
         cb(undefined, this);
       });
@@ -444,15 +467,17 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
   close(force: boolean, callback: Callback<void>): void;
   close(
     forceOrCallback?: boolean | Callback<void>,
-    callback?: Callback<void>
+    callback?: Callback<void>,
   ): Promise<void> | void {
-    if (typeof forceOrCallback === 'function') {
+    if (typeof forceOrCallback === "function") {
       callback = forceOrCallback;
     }
 
-    const force = typeof forceOrCallback === 'boolean' ? forceOrCallback : false;
+    const force = typeof forceOrCallback === "boolean"
+      ? forceOrCallback
+      : false;
 
-    return maybePromise(callback, callback => {
+    return maybePromise(callback, (callback) => {
       if (this.topology == null) {
         return callback();
       }
@@ -461,11 +486,11 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
       const topology = this.topology;
       this.topology = undefined;
 
-      topology.close({ force }, error => {
+      topology.close({ force }, (error) => {
         if (error) return callback(error);
         const { encrypter } = this[kOptions];
         if (encrypter) {
-          return encrypter.close(this, force, error => {
+          return encrypter.close(this, force, (error) => {
             callback(error);
           });
         }
@@ -508,14 +533,21 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
    */
   static connect(url: string): Promise<MongoClient>;
   static connect(url: string, callback: Callback<MongoClient>): void;
-  static connect(url: string, options: MongoClientOptions): Promise<MongoClient>;
-  static connect(url: string, options: MongoClientOptions, callback: Callback<MongoClient>): void;
+  static connect(
+    url: string,
+    options: MongoClientOptions,
+  ): Promise<MongoClient>;
+  static connect(
+    url: string,
+    options: MongoClientOptions,
+    callback: Callback<MongoClient>,
+  ): void;
   static connect(
     url: string,
     options?: MongoClientOptions | Callback<MongoClient>,
-    callback?: Callback<MongoClient>
+    callback?: Callback<MongoClient>,
   ): Promise<MongoClient> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     options = options ?? {};
 
     try {
@@ -539,7 +571,9 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
   startSession(options?: ClientSessionOptions): ClientSession {
     options = Object.assign({ explicit: true }, options);
     if (!this.topology) {
-      throw new MongoNotConnectedError('MongoClient must be connected to start a session');
+      throw new MongoNotConnectedError(
+        "MongoClient must be connected to start a session",
+      );
     }
 
     return this.topology.startSession(options, this.s.options);
@@ -555,23 +589,29 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
    * @param callback - An callback to execute with an implicitly created session
    */
   withSession(callback: WithSessionCallback): Promise<void>;
-  withSession(options: ClientSessionOptions, callback: WithSessionCallback): Promise<void>;
+  withSession(
+    options: ClientSessionOptions,
+    callback: WithSessionCallback,
+  ): Promise<void>;
   withSession(
     optionsOrOperation?: ClientSessionOptions | WithSessionCallback,
-    callback?: WithSessionCallback
+    callback?: WithSessionCallback,
   ): Promise<void> {
     const options = {
       // Always define an owner
       owner: Symbol(),
       // If it's an object inherit the options
-      ...(typeof optionsOrOperation === 'object' ? optionsOrOperation : {})
+      ...(typeof optionsOrOperation === "object" ? optionsOrOperation : {}),
     };
 
-    const withSessionCallback =
-      typeof optionsOrOperation === 'function' ? optionsOrOperation : callback;
+    const withSessionCallback = typeof optionsOrOperation === "function"
+      ? optionsOrOperation
+      : callback;
 
     if (withSessionCallback == null) {
-      throw new MongoInvalidArgumentError('Missing required callback parameter');
+      throw new MongoInvalidArgumentError(
+        "Missing required callback parameter",
+      );
     }
 
     const session = this.startSession(options);
@@ -595,7 +635,7 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
    */
   watch<TSchema extends Document = Document>(
     pipeline: Document[] = [],
-    options: ChangeStreamOptions = {}
+    options: ChangeStreamOptions = {},
   ): ChangeStream<TSchema> {
     // Allow optionally not specifying a pipeline
     if (!Array.isArray(pipeline)) {
@@ -603,7 +643,11 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
       pipeline = [];
     }
 
-    return new ChangeStream<TSchema>(this, pipeline, resolveOptions(this, options));
+    return new ChangeStream<TSchema>(
+      this,
+      pipeline,
+      resolveOptions(this, options),
+    );
   }
 
   /** Return the mongo client logger */
@@ -616,44 +660,44 @@ export class MongoClient extends TypedEventEmitter<MongoClientEvents> {
  * Mongo Client Options
  * @public
  */
-export interface MongoOptions
-  extends Required<
-      Pick<
-        MongoClientOptions,
-        | 'autoEncryption'
-        | 'connectTimeoutMS'
-        | 'directConnection'
-        | 'driverInfo'
-        | 'forceServerObjectId'
-        | 'minHeartbeatFrequencyMS'
-        | 'heartbeatFrequencyMS'
-        | 'keepAlive'
-        | 'keepAliveInitialDelay'
-        | 'localThresholdMS'
-        | 'logger'
-        | 'maxIdleTimeMS'
-        | 'maxPoolSize'
-        | 'minPoolSize'
-        | 'monitorCommands'
-        | 'noDelay'
-        | 'pkFactory'
-        | 'promiseLibrary'
-        | 'raw'
-        | 'replicaSet'
-        | 'retryReads'
-        | 'retryWrites'
-        | 'serverSelectionTimeoutMS'
-        | 'socketTimeoutMS'
-        | 'srvMaxHosts'
-        | 'srvServiceName'
-        | 'tlsAllowInvalidCertificates'
-        | 'tlsAllowInvalidHostnames'
-        | 'tlsInsecure'
-        | 'waitQueueTimeoutMS'
-        | 'zlibCompressionLevel'
-      >
-    >,
-    SupportedNodeConnectionOptions {
+export interface MongoOptions extends
+  Required<
+    Pick<
+      MongoClientOptions,
+      | "autoEncryption"
+      | "connectTimeoutMS"
+      | "directConnection"
+      | "driverInfo"
+      | "forceServerObjectId"
+      | "minHeartbeatFrequencyMS"
+      | "heartbeatFrequencyMS"
+      | "keepAlive"
+      | "keepAliveInitialDelay"
+      | "localThresholdMS"
+      | "logger"
+      | "maxIdleTimeMS"
+      | "maxPoolSize"
+      | "minPoolSize"
+      | "monitorCommands"
+      | "noDelay"
+      | "pkFactory"
+      | "promiseLibrary"
+      | "raw"
+      | "replicaSet"
+      | "retryReads"
+      | "retryWrites"
+      | "serverSelectionTimeoutMS"
+      | "socketTimeoutMS"
+      | "srvMaxHosts"
+      | "srvServiceName"
+      | "tlsAllowInvalidCertificates"
+      | "tlsAllowInvalidHostnames"
+      | "tlsInsecure"
+      | "waitQueueTimeoutMS"
+      | "zlibCompressionLevel"
+    >
+  >,
+  SupportedNodeConnectionOptions {
   hosts: HostAddress[];
   srvHost?: string;
   credentials?: MongoCredentials;
@@ -695,7 +739,6 @@ export interface MongoOptions
    * | `key`                | `sslKey`, `tlsCertificateKeyFile`                        | `string \| Buffer \| KeyObject[]`      |
    * | `passphrase`         | `sslPass`, `tlsCertificateKeyFilePassword`               | `string`                               |
    * | `rejectUnauthorized` | `sslValidate`                                            | `boolean`                              |
-   *
    */
   tls: boolean;
 

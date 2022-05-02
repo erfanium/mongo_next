@@ -1,19 +1,22 @@
-import type { Document } from './bson.ts';
-import type { TopologyVersion } from './sdam/server_description.ts';
-import type { TopologyDescription } from './sdam/topology_description.ts';
+import type { Document } from "./bson.ts";
+import type { TopologyVersion } from "./sdam/server_description.ts";
+import type { TopologyDescription } from "./sdam/topology_description.ts";
 
 /** @public */
 export type AnyError = MongoError | Error;
 
 /** @internal */
-const kErrorLabels = Symbol('errorLabels');
+const kErrorLabels = Symbol("errorLabels");
 
 /**
  * @internal
  * The legacy error message from the server that indicates the node is not a writable primary
  * https://github.com/mongodb/specifications/blob/b07c26dc40d04ac20349f989db531c9845fdd755/source/server-discovery-and-monitoring/server-discovery-and-monitoring.rst#not-writable-primary-and-node-is-recovering
  */
-export const LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE = new RegExp('not master', 'i');
+export const LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE = new RegExp(
+  "not master",
+  "i",
+);
 
 /**
  * @internal
@@ -21,8 +24,8 @@ export const LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE = new RegExp('not master'
  * https://github.com/mongodb/specifications/blob/b07c26dc40d04ac20349f989db531c9845fdd755/source/server-discovery-and-monitoring/server-discovery-and-monitoring.rst#not-writable-primary-and-node-is-recovering
  */
 export const LEGACY_NOT_PRIMARY_OR_SECONDARY_ERROR_MESSAGE = new RegExp(
-  'not master or secondary',
-  'i'
+  "not master or secondary",
+  "i",
 );
 
 /**
@@ -30,36 +33,41 @@ export const LEGACY_NOT_PRIMARY_OR_SECONDARY_ERROR_MESSAGE = new RegExp(
  * The error message from the server that indicates the node is recovering
  * https://github.com/mongodb/specifications/blob/b07c26dc40d04ac20349f989db531c9845fdd755/source/server-discovery-and-monitoring/server-discovery-and-monitoring.rst#not-writable-primary-and-node-is-recovering
  */
-export const NODE_IS_RECOVERING_ERROR_MESSAGE = new RegExp('node is recovering', 'i');
+export const NODE_IS_RECOVERING_ERROR_MESSAGE = new RegExp(
+  "node is recovering",
+  "i",
+);
 
 /** @internal MongoDB Error Codes */
-export const MONGODB_ERROR_CODES = Object.freeze({
-  HostUnreachable: 6,
-  HostNotFound: 7,
-  NetworkTimeout: 89,
-  ShutdownInProgress: 91,
-  PrimarySteppedDown: 189,
-  ExceededTimeLimit: 262,
-  SocketException: 9001,
-  NotWritablePrimary: 10107,
-  InterruptedAtShutdown: 11600,
-  InterruptedDueToReplStateChange: 11602,
-  NotPrimaryNoSecondaryOk: 13435,
-  NotPrimaryOrSecondary: 13436,
-  StaleShardVersion: 63,
-  StaleEpoch: 150,
-  StaleConfig: 13388,
-  RetryChangeStream: 234,
-  FailedToSatisfyReadPreference: 133,
-  CursorNotFound: 43,
-  LegacyNotPrimary: 10058,
-  WriteConcernFailed: 64,
-  NamespaceNotFound: 26,
-  IllegalOperation: 20,
-  MaxTimeMSExpired: 50,
-  UnknownReplWriteConcern: 79,
-  UnsatisfiableWriteConcern: 100
-} as const);
+export const MONGODB_ERROR_CODES = Object.freeze(
+  {
+    HostUnreachable: 6,
+    HostNotFound: 7,
+    NetworkTimeout: 89,
+    ShutdownInProgress: 91,
+    PrimarySteppedDown: 189,
+    ExceededTimeLimit: 262,
+    SocketException: 9001,
+    NotWritablePrimary: 10107,
+    InterruptedAtShutdown: 11600,
+    InterruptedDueToReplStateChange: 11602,
+    NotPrimaryNoSecondaryOk: 13435,
+    NotPrimaryOrSecondary: 13436,
+    StaleShardVersion: 63,
+    StaleEpoch: 150,
+    StaleConfig: 13388,
+    RetryChangeStream: 234,
+    FailedToSatisfyReadPreference: 133,
+    CursorNotFound: 43,
+    LegacyNotPrimary: 10058,
+    WriteConcernFailed: 64,
+    NamespaceNotFound: 26,
+    IllegalOperation: 20,
+    MaxTimeMSExpired: 50,
+    UnknownReplWriteConcern: 79,
+    UnsatisfiableWriteConcern: 100,
+  } as const,
+);
 
 // From spec@https://github.com/mongodb/specifications/blob/f93d78191f3db2898a59013a7ed5650352ef6da8/source/change-streams/change-streams.rst#resumable-error
 export const GET_MORE_RESUMABLE_CODES = new Set<number>([
@@ -80,20 +88,23 @@ export const GET_MORE_RESUMABLE_CODES = new Set<number>([
   MONGODB_ERROR_CODES.StaleConfig,
   MONGODB_ERROR_CODES.RetryChangeStream,
   MONGODB_ERROR_CODES.FailedToSatisfyReadPreference,
-  MONGODB_ERROR_CODES.CursorNotFound
+  MONGODB_ERROR_CODES.CursorNotFound,
 ]);
 
 /** @public */
-export const MongoErrorLabel = Object.freeze({
-  RetryableWriteError: 'RetryableWriteError',
-  TransientTransactionError: 'TransientTransactionError',
-  UnknownTransactionCommitResult: 'UnknownTransactionCommitResult',
-  ResumableChangeStreamError: 'ResumableChangeStreamError',
-  HandshakeError: 'HandshakeError'
-} as const);
+export const MongoErrorLabel = Object.freeze(
+  {
+    RetryableWriteError: "RetryableWriteError",
+    TransientTransactionError: "TransientTransactionError",
+    UnknownTransactionCommitResult: "UnknownTransactionCommitResult",
+    ResumableChangeStreamError: "ResumableChangeStreamError",
+    HandshakeError: "HandshakeError",
+  } as const,
+);
 
 /** @public */
-export type MongoErrorLabel = typeof MongoErrorLabel[keyof typeof MongoErrorLabel];
+export type MongoErrorLabel =
+  typeof MongoErrorLabel[keyof typeof MongoErrorLabel];
 
 /** @public */
 export interface ErrorDescription extends Document {
@@ -132,7 +143,7 @@ export class MongoError extends Error {
   }
 
   override get name(): string {
-    return 'MongoError';
+    return "MongoError";
   }
 
   /** Legacy name for server error responses */
@@ -170,22 +181,23 @@ export class MongoServerError extends MongoError {
   writeConcernError?: Document;
   errInfo?: Document;
   ok?: number;
-  [key: string]: any;
+  [key: string]: any
 
   constructor(message: ErrorDescription) {
-    super(message.message || message.errmsg || message.$err || 'n/a');
+    super(message.message || message.errmsg || message.$err || "n/a");
     if (message.errorLabels) {
       this[kErrorLabels] = new Set(message.errorLabels);
     }
 
     for (const name in message) {
-      if (name !== 'errorLabels' && name !== 'errmsg' && name !== 'message')
+      if (name !== "errorLabels" && name !== "errmsg" && name !== "message") {
         this[name] = message[name];
+      }
     }
   }
 
   override get name(): string {
-    return 'MongoServerError';
+    return "MongoServerError";
   }
 }
 
@@ -201,7 +213,7 @@ export class MongoDriverError extends MongoError {
   }
 
   override get name(): string {
-    return 'MongoDriverError';
+    return "MongoDriverError";
   }
 }
 
@@ -221,7 +233,7 @@ export class MongoAPIError extends MongoDriverError {
   }
 
   override get name(): string {
-    return 'MongoAPIError';
+    return "MongoAPIError";
   }
 }
 
@@ -241,7 +253,7 @@ export class MongoRuntimeError extends MongoDriverError {
   }
 
   override get name(): string {
-    return 'MongoRuntimeError';
+    return "MongoRuntimeError";
   }
 }
 
@@ -253,12 +265,15 @@ export class MongoRuntimeError extends MongoDriverError {
  * @category Error
  */
 export class MongoBatchReExecutionError extends MongoAPIError {
-  constructor(message = 'This batch has already been executed, create new batch to execute') {
+  constructor(
+    message =
+      "This batch has already been executed, create new batch to execute",
+  ) {
     super(message);
   }
 
   override get name(): string {
-    return 'MongoBatchReExecutionError';
+    return "MongoBatchReExecutionError";
   }
 }
 
@@ -275,7 +290,7 @@ export class MongoDecompressionError extends MongoRuntimeError {
   }
 
   override get name(): string {
-    return 'MongoDecompressionError';
+    return "MongoDecompressionError";
   }
 }
 
@@ -292,7 +307,7 @@ export class MongoNotConnectedError extends MongoAPIError {
   }
 
   override get name(): string {
-    return 'MongoNotConnectedError';
+    return "MongoNotConnectedError";
   }
 }
 
@@ -309,7 +324,7 @@ export class MongoTransactionError extends MongoAPIError {
   }
 
   override get name(): string {
-    return 'MongoTransactionError';
+    return "MongoTransactionError";
   }
 }
 
@@ -321,12 +336,12 @@ export class MongoTransactionError extends MongoAPIError {
  * @category Error
  */
 export class MongoExpiredSessionError extends MongoAPIError {
-  constructor(message = 'Cannot use a session that has ended') {
+  constructor(message = "Cannot use a session that has ended") {
     super(message);
   }
 
   override get name(): string {
-    return 'MongoExpiredSessionError';
+    return "MongoExpiredSessionError";
   }
 }
 
@@ -343,7 +358,7 @@ export class MongoKerberosError extends MongoRuntimeError {
   }
 
   override get name(): string {
-    return 'MongoKerberosError';
+    return "MongoKerberosError";
   }
 }
 
@@ -359,7 +374,7 @@ export class MongoChangeStreamError extends MongoRuntimeError {
   }
 
   override get name(): string {
-    return 'MongoChangeStreamError';
+    return "MongoChangeStreamError";
   }
 }
 
@@ -370,12 +385,12 @@ export class MongoChangeStreamError extends MongoRuntimeError {
  * @category Error
  */
 export class MongoTailableCursorError extends MongoAPIError {
-  constructor(message = 'Tailable cursor does not support this operation') {
+  constructor(message = "Tailable cursor does not support this operation") {
     super(message);
   }
 
   override get name(): string {
-    return 'MongoTailableCursorError';
+    return "MongoTailableCursorError";
   }
 }
 
@@ -390,7 +405,7 @@ export class MongoGridFSStreamError extends MongoRuntimeError {
   }
 
   override get name(): string {
-    return 'MongoGridFSStreamError';
+    return "MongoGridFSStreamError";
   }
 }
 
@@ -407,7 +422,7 @@ export class MongoGridFSChunkError extends MongoRuntimeError {
   }
 
   override get name(): string {
-    return 'MongoGridFSChunkError';
+    return "MongoGridFSChunkError";
   }
 }
 
@@ -433,7 +448,7 @@ export class MongoUnexpectedServerResponseError extends MongoRuntimeError {
   }
 
   override get name(): string {
-    return 'MongoUnexpectedServerResponseError';
+    return "MongoUnexpectedServerResponseError";
   }
 }
 
@@ -445,12 +460,12 @@ export class MongoUnexpectedServerResponseError extends MongoRuntimeError {
  * @category Error
  */
 export class MongoCursorInUseError extends MongoAPIError {
-  constructor(message = 'Cursor is already initialized') {
+  constructor(message = "Cursor is already initialized") {
     super(message);
   }
 
   override get name(): string {
-    return 'MongoCursorInUseError';
+    return "MongoCursorInUseError";
   }
 }
 
@@ -462,12 +477,12 @@ export class MongoCursorInUseError extends MongoAPIError {
  * @category Error
  */
 export class MongoServerClosedError extends MongoAPIError {
-  constructor(message = 'Server is closed') {
+  constructor(message = "Server is closed") {
     super(message);
   }
 
   override get name(): string {
-    return 'MongoServerClosedError';
+    return "MongoServerClosedError";
   }
 }
 
@@ -479,11 +494,11 @@ export class MongoServerClosedError extends MongoAPIError {
  */
 export class MongoCursorExhaustedError extends MongoAPIError {
   constructor(message?: string) {
-    super(message || 'Cursor is exhausted');
+    super(message || "Cursor is exhausted");
   }
 
   override get name(): string {
-    return 'MongoCursorExhaustedError';
+    return "MongoCursorExhaustedError";
   }
 }
 
@@ -495,17 +510,17 @@ export class MongoCursorExhaustedError extends MongoAPIError {
  * @category Error
  */
 export class MongoTopologyClosedError extends MongoAPIError {
-  constructor(message = 'Topology is closed') {
+  constructor(message = "Topology is closed") {
     super(message);
   }
 
   override get name(): string {
-    return 'MongoTopologyClosedError';
+    return "MongoTopologyClosedError";
   }
 }
 
 /** @internal */
-const kBeforeHandshake = Symbol('beforeHandshake');
+const kBeforeHandshake = Symbol("beforeHandshake");
 export function isNetworkErrorBeforeHandshake(err: MongoNetworkError): boolean {
   return err[kBeforeHandshake] === true;
 }
@@ -528,13 +543,13 @@ export class MongoNetworkError extends MongoError {
   constructor(message: string | Error, options?: MongoNetworkErrorOptions) {
     super(message);
 
-    if (options && typeof options.beforeHandshake === 'boolean') {
+    if (options && typeof options.beforeHandshake === "boolean") {
       this[kBeforeHandshake] = options.beforeHandshake;
     }
   }
 
   override get name(): string {
-    return 'MongoNetworkError';
+    return "MongoNetworkError";
   }
 }
 
@@ -552,7 +567,7 @@ export class MongoNetworkTimeoutError extends MongoNetworkError {
   }
 
   override get name(): string {
-    return 'MongoNetworkTimeoutError';
+    return "MongoNetworkTimeoutError";
   }
 }
 
@@ -567,14 +582,13 @@ export class MongoParseError extends MongoDriverError {
   }
 
   override get name(): string {
-    return 'MongoParseError';
+    return "MongoParseError";
   }
 }
 
 /**
  * An error generated when the user supplies malformed or unexpected arguments
  * or when a required argument or field is not provided.
- *
  *
  * @public
  * @category Error
@@ -585,14 +599,13 @@ export class MongoInvalidArgumentError extends MongoAPIError {
   }
 
   override get name(): string {
-    return 'MongoInvalidArgumentError';
+    return "MongoInvalidArgumentError";
   }
 }
 
 /**
  * An error generated when a feature that is not enabled or allowed for the current server
  * configuration is used
- *
  *
  * @public
  * @category Error
@@ -603,14 +616,13 @@ export class MongoCompatibilityError extends MongoAPIError {
   }
 
   override get name(): string {
-    return 'MongoCompatibilityError';
+    return "MongoCompatibilityError";
   }
 }
 
 /**
  * An error generated when the user fails to provide authentication credentials before attempting
  * to connect to a mongo server instance.
- *
  *
  * @public
  * @category Error
@@ -621,7 +633,7 @@ export class MongoMissingCredentialsError extends MongoAPIError {
   }
 
   override get name(): string {
-    return 'MongoMissingCredentialsError';
+    return "MongoMissingCredentialsError";
   }
 }
 
@@ -637,7 +649,7 @@ export class MongoMissingDependencyError extends MongoAPIError {
   }
 
   override get name(): string {
-    return 'MongoMissingDependencyError';
+    return "MongoMissingDependencyError";
   }
 }
 /**
@@ -664,7 +676,7 @@ export class MongoSystemError extends MongoError {
   }
 
   override get name(): string {
-    return 'MongoSystemError';
+    return "MongoSystemError";
   }
 }
 
@@ -679,7 +691,7 @@ export class MongoServerSelectionError extends MongoSystemError {
   }
 
   override get name(): string {
-    return 'MongoServerSelectionError';
+    return "MongoServerSelectionError";
   }
 }
 
@@ -719,7 +731,7 @@ export class MongoWriteConcernError extends MongoServerError {
   }
 
   override get name(): string {
-    return 'MongoWriteConcernError';
+    return "MongoWriteConcernError";
   }
 }
 
@@ -735,16 +747,19 @@ const RETRYABLE_READ_ERROR_CODES = new Set<number>([
   MONGODB_ERROR_CODES.InterruptedAtShutdown,
   MONGODB_ERROR_CODES.InterruptedDueToReplStateChange,
   MONGODB_ERROR_CODES.NotPrimaryNoSecondaryOk,
-  MONGODB_ERROR_CODES.NotPrimaryOrSecondary
+  MONGODB_ERROR_CODES.NotPrimaryOrSecondary,
 ]);
 
 // see: https://github.com/mongodb/specifications/blob/master/source/retryable-writes/retryable-writes.rst#terms
 const RETRYABLE_WRITE_ERROR_CODES = new Set<number>([
   ...RETRYABLE_READ_ERROR_CODES,
-  MONGODB_ERROR_CODES.ExceededTimeLimit
+  MONGODB_ERROR_CODES.ExceededTimeLimit,
 ]);
 
-export function needsRetryableWriteLabel(error: Error, maxWireVersion: number): boolean {
+export function needsRetryableWriteLabel(
+  error: Error,
+  maxWireVersion: number,
+): boolean {
   // pre-4.4 server, then the driver adds an error label for every valid case
   // execute operation will only inspect the label, code/message logic is handled here
   if (error instanceof MongoNetworkError) {
@@ -753,7 +768,8 @@ export function needsRetryableWriteLabel(error: Error, maxWireVersion: number): 
 
   if (error instanceof MongoError) {
     if (
-      (maxWireVersion >= 9 || error.hasErrorLabel(MongoErrorLabel.RetryableWriteError)) &&
+      (maxWireVersion >= 9 ||
+        error.hasErrorLabel(MongoErrorLabel.RetryableWriteError)) &&
       !error.hasErrorLabel(MongoErrorLabel.HandshakeError)
     ) {
       // If we already have the error label no need to add it again. 4.4+ servers add the label.
@@ -764,19 +780,24 @@ export function needsRetryableWriteLabel(error: Error, maxWireVersion: number): 
   }
 
   if (error instanceof MongoWriteConcernError) {
-    return RETRYABLE_WRITE_ERROR_CODES.has(error.result?.code ?? error.code ?? 0);
+    return RETRYABLE_WRITE_ERROR_CODES.has(
+      error.result?.code ?? error.code ?? 0,
+    );
   }
 
-  if (error instanceof MongoError && typeof error.code === 'number') {
+  if (error instanceof MongoError && typeof error.code === "number") {
     return RETRYABLE_WRITE_ERROR_CODES.has(error.code);
   }
 
-  const isNotWritablePrimaryError = LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE.test(error.message);
+  const isNotWritablePrimaryError = LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE
+    .test(error.message);
   if (isNotWritablePrimaryError) {
     return true;
   }
 
-  const isNodeIsRecoveringError = NODE_IS_RECOVERING_ERROR_MESSAGE.test(error.message);
+  const isNodeIsRecoveringError = NODE_IS_RECOVERING_ERROR_MESSAGE.test(
+    error.message,
+  );
   if (isNodeIsRecoveringError) {
     return true;
   }
@@ -790,8 +811,9 @@ export function isRetryableWriteError(error: MongoError): boolean {
 
 /** Determines whether an error is something the driver should attempt to retry */
 export function isRetryableReadError(error: MongoError): boolean {
-  const hasRetryableErrorCode =
-    typeof error.code === 'number' ? RETRYABLE_READ_ERROR_CODES.has(error.code) : false;
+  const hasRetryableErrorCode = typeof error.code === "number"
+    ? RETRYABLE_READ_ERROR_CODES.has(error.code)
+    : false;
   if (hasRetryableErrorCode) {
     return true;
   }
@@ -800,12 +822,15 @@ export function isRetryableReadError(error: MongoError): boolean {
     return true;
   }
 
-  const isNotWritablePrimaryError = LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE.test(error.message);
+  const isNotWritablePrimaryError = LEGACY_NOT_WRITABLE_PRIMARY_ERROR_MESSAGE
+    .test(error.message);
   if (isNotWritablePrimaryError) {
     return true;
   }
 
-  const isNodeIsRecoveringError = NODE_IS_RECOVERING_ERROR_MESSAGE.test(error.message);
+  const isNodeIsRecoveringError = NODE_IS_RECOVERING_ERROR_MESSAGE.test(
+    error.message,
+  );
   if (isNodeIsRecoveringError) {
     return true;
   }
@@ -818,22 +843,22 @@ const SDAM_RECOVERING_CODES = new Set<number>([
   MONGODB_ERROR_CODES.PrimarySteppedDown,
   MONGODB_ERROR_CODES.InterruptedAtShutdown,
   MONGODB_ERROR_CODES.InterruptedDueToReplStateChange,
-  MONGODB_ERROR_CODES.NotPrimaryOrSecondary
+  MONGODB_ERROR_CODES.NotPrimaryOrSecondary,
 ]);
 
 const SDAM_NOT_PRIMARY_CODES = new Set<number>([
   MONGODB_ERROR_CODES.NotWritablePrimary,
   MONGODB_ERROR_CODES.NotPrimaryNoSecondaryOk,
-  MONGODB_ERROR_CODES.LegacyNotPrimary
+  MONGODB_ERROR_CODES.LegacyNotPrimary,
 ]);
 
 const SDAM_NODE_SHUTTING_DOWN_ERROR_CODES = new Set<number>([
   MONGODB_ERROR_CODES.InterruptedAtShutdown,
-  MONGODB_ERROR_CODES.ShutdownInProgress
+  MONGODB_ERROR_CODES.ShutdownInProgress,
 ]);
 
 function isRecoveringError(err: MongoError) {
-  if (typeof err.code === 'number') {
+  if (typeof err.code === "number") {
     // If any error code exists, we ignore the error.message
     return SDAM_RECOVERING_CODES.has(err.code);
   }
@@ -845,7 +870,7 @@ function isRecoveringError(err: MongoError) {
 }
 
 function isNotWritablePrimaryError(err: MongoError) {
-  if (typeof err.code === 'number') {
+  if (typeof err.code === "number") {
     // If any error code exists, we ignore the error.message
     return SDAM_NOT_PRIMARY_CODES.has(err.code);
   }
@@ -858,7 +883,8 @@ function isNotWritablePrimaryError(err: MongoError) {
 }
 
 export function isNodeShuttingDownError(err: MongoError): boolean {
-  return !!(typeof err.code === 'number' && SDAM_NODE_SHUTTING_DOWN_ERROR_CODES.has(err.code));
+  return !!(typeof err.code === "number" &&
+    SDAM_NODE_SHUTTING_DOWN_ERROR_CODES.has(err.code));
 }
 
 /**
@@ -878,7 +904,9 @@ export function isSDAMUnrecoverableError(error: MongoError): boolean {
   return isRecoveringError(error) || isNotWritablePrimaryError(error);
 }
 
-export function isNetworkTimeoutError(err: MongoError): err is MongoNetworkError {
+export function isNetworkTimeoutError(
+  err: MongoError,
+): err is MongoNetworkError {
   return !!(err instanceof MongoNetworkError && err.message.match(/timed out/));
 }
 
@@ -899,7 +927,7 @@ export function isResumableError(error?: Error, wireVersion?: number): boolean {
     return error.hasErrorLabel(MongoErrorLabel.ResumableChangeStreamError);
   }
 
-  if (typeof error.code === 'number') {
+  if (typeof error.code === "number") {
     return GET_MORE_RESUMABLE_CODES.has(error.code);
   }
 

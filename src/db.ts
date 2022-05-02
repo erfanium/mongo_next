@@ -1,82 +1,94 @@
-import { Admin } from './admin.ts';
-import { BSONSerializeOptions, Document, resolveBSONOptions } from './bson.ts';
-import { ChangeStream, ChangeStreamOptions } from './change_stream.ts';
-import { Collection, CollectionOptions } from './collection.ts';
-import * as CONSTANTS from './constants.ts';
-import { AggregationCursor } from './cursor/aggregation_cursor.ts';
-import { MongoAPIError, MongoInvalidArgumentError } from './error.ts';
-import { Logger, LoggerOptions } from './logger.ts';
-import type { MongoClient, PkFactory } from './mongo_client.ts';
-import type { TODO_NODE_3286 } from './mongo_types.ts';
-import { AddUserOperation, AddUserOptions } from './operations/add_user.ts';
-import type { AggregateOptions } from './operations/aggregate.ts';
-import { CollectionsOperation } from './operations/collections.ts';
-import type { IndexInformationOptions } from './operations/common_functions.ts';
-import { CreateCollectionOperation, CreateCollectionOptions } from './operations/create_collection.ts';
+import { Admin } from "./admin.ts";
+import { BSONSerializeOptions, Document, resolveBSONOptions } from "./bson.ts";
+import { ChangeStream, ChangeStreamOptions } from "./change_stream.ts";
+import { Collection, CollectionOptions } from "./collection.ts";
+import * as CONSTANTS from "./constants.ts";
+import { AggregationCursor } from "./cursor/aggregation_cursor.ts";
+import { MongoAPIError, MongoInvalidArgumentError } from "./error.ts";
+import { Logger, LoggerOptions } from "./logger.ts";
+import type { MongoClient, PkFactory } from "./mongo_client.ts";
+import type { TODO_NODE_3286 } from "./mongo_types.ts";
+import { AddUserOperation, AddUserOptions } from "./operations/add_user.ts";
+import type { AggregateOptions } from "./operations/aggregate.ts";
+import { CollectionsOperation } from "./operations/collections.ts";
+import type { IndexInformationOptions } from "./operations/common_functions.ts";
+import {
+  CreateCollectionOperation,
+  CreateCollectionOptions,
+} from "./operations/create_collection.ts";
 import {
   DropCollectionOperation,
   DropCollectionOptions,
   DropDatabaseOperation,
-  DropDatabaseOptions
-} from './operations/drop.ts';
-import { executeOperation } from './operations/execute_operation.ts';
+  DropDatabaseOptions,
+} from "./operations/drop.ts";
+import { executeOperation } from "./operations/execute_operation.ts";
 import {
   CreateIndexesOptions,
   CreateIndexOperation,
   IndexInformationOperation,
-  IndexSpecification
-} from './operations/indexes.ts';
+  IndexSpecification,
+} from "./operations/indexes.ts";
 import {
   CollectionInfo,
   ListCollectionsCursor,
-  ListCollectionsOptions
-} from './operations/list_collections.ts';
-import { ProfilingLevelOperation, ProfilingLevelOptions } from './operations/profiling_level.ts';
-import { RemoveUserOperation, RemoveUserOptions } from './operations/remove_user.ts';
-import { RenameOperation, RenameOptions } from './operations/rename.ts';
-import { RunCommandOperation, RunCommandOptions } from './operations/run_command.ts';
+  ListCollectionsOptions,
+} from "./operations/list_collections.ts";
+import {
+  ProfilingLevelOperation,
+  ProfilingLevelOptions,
+} from "./operations/profiling_level.ts";
+import {
+  RemoveUserOperation,
+  RemoveUserOptions,
+} from "./operations/remove_user.ts";
+import { RenameOperation, RenameOptions } from "./operations/rename.ts";
+import {
+  RunCommandOperation,
+  RunCommandOptions,
+} from "./operations/run_command.ts";
 import {
   ProfilingLevel,
   SetProfilingLevelOperation,
-  SetProfilingLevelOptions
-} from './operations/set_profiling_level.ts';
-import { DbStatsOperation, DbStatsOptions } from './operations/stats.ts';
-import { ReadConcern } from './read_concern.ts';
-import { ReadPreference, ReadPreferenceLike } from './read_preference.ts';
+  SetProfilingLevelOptions,
+} from "./operations/set_profiling_level.ts";
+import { DbStatsOperation, DbStatsOptions } from "./operations/stats.ts";
+import { ReadConcern } from "./read_concern.ts";
+import { ReadPreference, ReadPreferenceLike } from "./read_preference.ts";
 import {
   Callback,
   DEFAULT_PK_FACTORY,
   filterOptions,
   getTopology,
   MongoDBNamespace,
-  resolveOptions
-} from './utils.ts';
-import { WriteConcern, WriteConcernOptions } from './write_concern.ts';
+  resolveOptions,
+} from "./utils.ts";
+import { WriteConcern, WriteConcernOptions } from "./write_concern.ts";
 
 // Allowed parameters
 const DB_OPTIONS_ALLOW_LIST = [
-  'writeConcern',
-  'readPreference',
-  'readPreferenceTags',
-  'native_parser',
-  'forceServerObjectId',
-  'pkFactory',
-  'serializeFunctions',
-  'raw',
-  'authSource',
-  'ignoreUndefined',
-  'readConcern',
-  'retryMiliSeconds',
-  'numberOfRetries',
-  'loggerLevel',
-  'logger',
-  'promoteBuffers',
-  'promoteLongs',
-  'bsonRegExp',
-  'enableUtf8Validation',
-  'promoteValues',
-  'compression',
-  'retryWrites'
+  "writeConcern",
+  "readPreference",
+  "readPreferenceTags",
+  "native_parser",
+  "forceServerObjectId",
+  "pkFactory",
+  "serializeFunctions",
+  "raw",
+  "authSource",
+  "ignoreUndefined",
+  "readConcern",
+  "retryMiliSeconds",
+  "numberOfRetries",
+  "loggerLevel",
+  "logger",
+  "promoteBuffers",
+  "promoteLongs",
+  "bsonRegExp",
+  "enableUtf8Validation",
+  "promoteValues",
+  "compression",
+  "retryWrites",
 ];
 
 /** @internal */
@@ -93,7 +105,8 @@ export interface DbPrivate {
 }
 
 /** @public */
-export interface DbOptions extends BSONSerializeOptions, WriteConcernOptions, LoggerOptions {
+export interface DbOptions
+  extends BSONSerializeOptions, WriteConcernOptions, LoggerOptions {
   /** If the database authentication is dependent on another databaseName. */
   authSource?: string;
   /** Force server to assign _id values instead of driver. */
@@ -131,7 +144,8 @@ export class Db {
   /** @internal */
   s: DbPrivate;
 
-  public static SYSTEM_NAMESPACE_COLLECTION = CONSTANTS.SYSTEM_NAMESPACE_COLLECTION;
+  public static SYSTEM_NAMESPACE_COLLECTION =
+    CONSTANTS.SYSTEM_NAMESPACE_COLLECTION;
   public static SYSTEM_INDEX_COLLECTION = CONSTANTS.SYSTEM_INDEX_COLLECTION;
   public static SYSTEM_PROFILE_COLLECTION = CONSTANTS.SYSTEM_PROFILE_COLLECTION;
   public static SYSTEM_USER_COLLECTION = CONSTANTS.SYSTEM_USER_COLLECTION;
@@ -161,7 +175,7 @@ export class Db {
       // Options
       options,
       // Logger instance
-      logger: new Logger('Db', options),
+      logger: new Logger("Db", options),
       // Unpack read preference
       readPreference: ReadPreference.fromOptions(options),
       // Merge bson options
@@ -172,7 +186,7 @@ export class Db {
       readConcern: ReadConcern.fromOptions(options),
       writeConcern: WriteConcern.fromOptions(options),
       // Namespace
-      namespace: new MongoDBNamespace(databaseName)
+      namespace: new MongoDBNamespace(databaseName),
     };
   }
 
@@ -197,7 +211,7 @@ export class Db {
    * Check if a secondary can be used (because the read preference is *not* set to primary)
    */
   get secondaryOk(): boolean {
-    return this.s.readPreference?.preference !== 'primary' || false;
+    return this.s.readPreference?.preference !== "primary" || false;
   }
 
   get readConcern(): ReadConcern | undefined {
@@ -239,28 +253,32 @@ export class Db {
    */
   createCollection<TSchema extends Document = Document>(
     name: string,
-    options?: CreateCollectionOptions
+    options?: CreateCollectionOptions,
   ): Promise<Collection<TSchema>>;
   createCollection<TSchema extends Document = Document>(
     name: string,
-    callback: Callback<Collection<TSchema>>
+    callback: Callback<Collection<TSchema>>,
   ): void;
   createCollection<TSchema extends Document = Document>(
     name: string,
     options: CreateCollectionOptions | undefined,
-    callback: Callback<Collection<TSchema>>
+    callback: Callback<Collection<TSchema>>,
   ): void;
   createCollection<TSchema extends Document = Document>(
     name: string,
     options?: CreateCollectionOptions | Callback<Collection>,
-    callback?: Callback<Collection>
+    callback?: Callback<Collection>,
   ): Promise<Collection<TSchema>> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new CreateCollectionOperation(this, name, resolveOptions(this, options)) as TODO_NODE_3286,
-      callback
+      new CreateCollectionOperation(
+        this,
+        name,
+        resolveOptions(this, options),
+      ) as TODO_NODE_3286,
+      callback,
     ) as TODO_NODE_3286;
   }
 
@@ -277,16 +295,24 @@ export class Db {
   command(command: Document): Promise<Document>;
   command(command: Document, callback: Callback<Document>): void;
   command(command: Document, options: RunCommandOptions): Promise<Document>;
-  command(command: Document, options: RunCommandOptions, callback: Callback<Document>): void;
+  command(
+    command: Document,
+    options: RunCommandOptions,
+    callback: Callback<Document>,
+  ): void;
   command(
     command: Document,
     options?: RunCommandOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     // Intentionally, we do not inherit options from parent for this operation.
-    return executeOperation(this, new RunCommandOperation(this, command, options ?? {}), callback);
+    return executeOperation(
+      this,
+      new RunCommandOperation(this, command, options ?? {}),
+      callback,
+    );
   }
 
   /**
@@ -297,23 +323,29 @@ export class Db {
    */
   aggregate<T extends Document = Document>(
     pipeline: Document[] = [],
-    options?: AggregateOptions
+    options?: AggregateOptions,
   ): AggregationCursor<T> {
     if (arguments.length > 2) {
-      throw new MongoInvalidArgumentError('Method "db.aggregate()" accepts at most two arguments');
+      throw new MongoInvalidArgumentError(
+        'Method "db.aggregate()" accepts at most two arguments',
+      );
     }
-    if (typeof pipeline === 'function') {
-      throw new MongoInvalidArgumentError('Argument "pipeline" must not be function');
+    if (typeof pipeline === "function") {
+      throw new MongoInvalidArgumentError(
+        'Argument "pipeline" must not be function',
+      );
     }
-    if (typeof options === 'function') {
-      throw new MongoInvalidArgumentError('Argument "options" must not be function');
+    if (typeof options === "function") {
+      throw new MongoInvalidArgumentError(
+        'Argument "options" must not be function',
+      );
     }
 
     return new AggregationCursor(
       getTopology(this),
       this.s.namespace,
       pipeline,
-      resolveOptions(this, options)
+      resolveOptions(this, options),
     );
   }
 
@@ -330,10 +362,12 @@ export class Db {
    */
   collection<TSchema extends Document = Document>(
     name: string,
-    options: CollectionOptions = {}
+    options: CollectionOptions = {},
   ): Collection<TSchema> {
-    if (typeof options === 'function') {
-      throw new MongoInvalidArgumentError('The callback form of this helper has been removed.');
+    if (typeof options === "function") {
+      throw new MongoInvalidArgumentError(
+        "The callback form of this helper has been removed.",
+      );
     }
     const finalOptions = resolveOptions(this, options);
     return new Collection<TSchema>(this, name, finalOptions);
@@ -351,13 +385,13 @@ export class Db {
   stats(options: DbStatsOptions, callback: Callback<Document>): void;
   stats(
     options?: DbStatsOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
     return executeOperation(
       this,
       new DbStatsOperation(this, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -369,23 +403,33 @@ export class Db {
    */
   listCollections(
     filter: Document,
-    options: Exclude<ListCollectionsOptions, 'nameOnly'> & { nameOnly: true }
-  ): ListCollectionsCursor<Pick<CollectionInfo, 'name' | 'type'>>;
+    options: Exclude<ListCollectionsOptions, "nameOnly"> & { nameOnly: true },
+  ): ListCollectionsCursor<Pick<CollectionInfo, "name" | "type">>;
   listCollections(
     filter: Document,
-    options: Exclude<ListCollectionsOptions, 'nameOnly'> & { nameOnly: false }
+    options: Exclude<ListCollectionsOptions, "nameOnly"> & { nameOnly: false },
   ): ListCollectionsCursor<CollectionInfo>;
   listCollections<
-    T extends Pick<CollectionInfo, 'name' | 'type'> | CollectionInfo =
-      | Pick<CollectionInfo, 'name' | 'type'>
-      | CollectionInfo
-  >(filter?: Document, options?: ListCollectionsOptions): ListCollectionsCursor<T>;
+    T extends Pick<CollectionInfo, "name" | "type"> | CollectionInfo =
+      | Pick<CollectionInfo, "name" | "type">
+      | CollectionInfo,
+  >(
+    filter?: Document,
+    options?: ListCollectionsOptions,
+  ): ListCollectionsCursor<T>;
   listCollections<
-    T extends Pick<CollectionInfo, 'name' | 'type'> | CollectionInfo =
-      | Pick<CollectionInfo, 'name' | 'type'>
-      | CollectionInfo
-  >(filter: Document = {}, options: ListCollectionsOptions = {}): ListCollectionsCursor<T> {
-    return new ListCollectionsCursor<T>(this, filter, resolveOptions(this, options));
+    T extends Pick<CollectionInfo, "name" | "type"> | CollectionInfo =
+      | Pick<CollectionInfo, "name" | "type">
+      | CollectionInfo,
+  >(
+    filter: Document = {},
+    options: ListCollectionsOptions = {},
+  ): ListCollectionsCursor<T> {
+    return new ListCollectionsCursor<T>(
+      this,
+      filter,
+      resolveOptions(this, options),
+    );
   }
 
   /**
@@ -401,31 +445,31 @@ export class Db {
    */
   renameCollection<TSchema extends Document = Document>(
     fromCollection: string,
-    toCollection: string
+    toCollection: string,
   ): Promise<Collection<TSchema>>;
   renameCollection<TSchema extends Document = Document>(
     fromCollection: string,
     toCollection: string,
-    callback: Callback<Collection<TSchema>>
+    callback: Callback<Collection<TSchema>>,
   ): void;
   renameCollection<TSchema extends Document = Document>(
     fromCollection: string,
     toCollection: string,
-    options: RenameOptions
+    options: RenameOptions,
   ): Promise<Collection<TSchema>>;
   renameCollection<TSchema extends Document = Document>(
     fromCollection: string,
     toCollection: string,
     options: RenameOptions,
-    callback: Callback<Collection<TSchema>>
+    callback: Callback<Collection<TSchema>>,
   ): void;
   renameCollection<TSchema extends Document = Document>(
     fromCollection: string,
     toCollection: string,
     options?: RenameOptions | Callback<Collection<TSchema>>,
-    callback?: Callback<Collection<TSchema>>
+    callback?: Callback<Collection<TSchema>>,
   ): Promise<Collection<TSchema>> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     // Intentionally, we do not inherit options from parent for this operation.
     options = { ...options, readPreference: ReadPreference.PRIMARY };
@@ -438,9 +482,9 @@ export class Db {
       new RenameOperation(
         this.collection<TSchema>(fromCollection) as TODO_NODE_3286,
         toCollection,
-        options
+        options,
       ) as TODO_NODE_3286,
-      callback
+      callback,
     );
   }
 
@@ -453,19 +497,26 @@ export class Db {
    */
   dropCollection(name: string): Promise<boolean>;
   dropCollection(name: string, callback: Callback<boolean>): void;
-  dropCollection(name: string, options: DropCollectionOptions): Promise<boolean>;
-  dropCollection(name: string, options: DropCollectionOptions, callback: Callback<boolean>): void;
+  dropCollection(
+    name: string,
+    options: DropCollectionOptions,
+  ): Promise<boolean>;
+  dropCollection(
+    name: string,
+    options: DropCollectionOptions,
+    callback: Callback<boolean>,
+  ): void;
   dropCollection(
     name: string,
     options?: DropCollectionOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new DropCollectionOperation(this, name, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -481,14 +532,14 @@ export class Db {
   dropDatabase(options: DropDatabaseOptions, callback: Callback<boolean>): void;
   dropDatabase(
     options?: DropDatabaseOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new DropDatabaseOperation(this, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -501,17 +552,20 @@ export class Db {
   collections(): Promise<Collection[]>;
   collections(callback: Callback<Collection[]>): void;
   collections(options: ListCollectionsOptions): Promise<Collection[]>;
-  collections(options: ListCollectionsOptions, callback: Callback<Collection[]>): void;
+  collections(
+    options: ListCollectionsOptions,
+    callback: Callback<Collection[]>,
+  ): void;
   collections(
     options?: ListCollectionsOptions | Callback<Collection[]>,
-    callback?: Callback<Collection[]>
+    callback?: Callback<Collection[]>,
   ): Promise<Collection[]> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new CollectionsOperation(this, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -524,30 +578,39 @@ export class Db {
    * @param callback - An optional callback, a Promise will be returned if none is provided
    */
   createIndex(name: string, indexSpec: IndexSpecification): Promise<string>;
-  createIndex(name: string, indexSpec: IndexSpecification, callback?: Callback<string>): void;
   createIndex(
     name: string,
     indexSpec: IndexSpecification,
-    options: CreateIndexesOptions
+    callback?: Callback<string>,
+  ): void;
+  createIndex(
+    name: string,
+    indexSpec: IndexSpecification,
+    options: CreateIndexesOptions,
   ): Promise<string>;
   createIndex(
     name: string,
     indexSpec: IndexSpecification,
     options: CreateIndexesOptions,
-    callback: Callback<string>
+    callback: Callback<string>,
   ): void;
   createIndex(
     name: string,
     indexSpec: IndexSpecification,
     options?: CreateIndexesOptions | Callback<string>,
-    callback?: Callback<string>
+    callback?: Callback<string>,
   ): Promise<string> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new CreateIndexOperation(this, name, indexSpec, resolveOptions(this, options)),
-      callback
+      new CreateIndexOperation(
+        this,
+        name,
+        indexSpec,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -562,38 +625,55 @@ export class Db {
   addUser(username: string): Promise<Document>;
   addUser(username: string, callback: Callback<Document>): void;
   addUser(username: string, password: string): Promise<Document>;
-  addUser(username: string, password: string, callback: Callback<Document>): void;
+  addUser(
+    username: string,
+    password: string,
+    callback: Callback<Document>,
+  ): void;
   addUser(username: string, options: AddUserOptions): Promise<Document>;
-  addUser(username: string, options: AddUserOptions, callback: Callback<Document>): void;
-  addUser(username: string, password: string, options: AddUserOptions): Promise<Document>;
+  addUser(
+    username: string,
+    options: AddUserOptions,
+    callback: Callback<Document>,
+  ): void;
   addUser(
     username: string,
     password: string,
     options: AddUserOptions,
-    callback: Callback<Document>
+  ): Promise<Document>;
+  addUser(
+    username: string,
+    password: string,
+    options: AddUserOptions,
+    callback: Callback<Document>,
   ): void;
   addUser(
     username: string,
     password?: string | AddUserOptions | Callback<Document>,
     options?: AddUserOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof password === 'function') {
+    if (typeof password === "function") {
       (callback = password), (password = undefined), (options = {});
-    } else if (typeof password !== 'string') {
-      if (typeof options === 'function') {
+    } else if (typeof password !== "string") {
+      if (typeof options === "function") {
         (callback = options), (options = password), (password = undefined);
       } else {
         (options = password), (callback = undefined), (password = undefined);
       }
     } else {
-      if (typeof options === 'function') (callback = options), (options = {});
+      if (typeof options === "function") (callback = options), (options = {});
     }
 
     return executeOperation(
       this,
-      new AddUserOperation(this, username, password, resolveOptions(this, options)),
-      callback
+      new AddUserOperation(
+        this,
+        username,
+        password,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -607,18 +687,22 @@ export class Db {
   removeUser(username: string): Promise<boolean>;
   removeUser(username: string, callback: Callback<boolean>): void;
   removeUser(username: string, options: RemoveUserOptions): Promise<boolean>;
-  removeUser(username: string, options: RemoveUserOptions, callback: Callback<boolean>): void;
+  removeUser(
+    username: string,
+    options: RemoveUserOptions,
+    callback: Callback<boolean>,
+  ): void;
   removeUser(
     username: string,
     options?: RemoveUserOptions | Callback<boolean>,
-    callback?: Callback<boolean>
+    callback?: Callback<boolean>,
   ): Promise<boolean> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new RemoveUserOperation(this, username, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -630,27 +714,34 @@ export class Db {
    * @param callback - An optional callback, a Promise will be returned if none is provided
    */
   setProfilingLevel(level: ProfilingLevel): Promise<ProfilingLevel>;
-  setProfilingLevel(level: ProfilingLevel, callback: Callback<ProfilingLevel>): void;
   setProfilingLevel(
     level: ProfilingLevel,
-    options: SetProfilingLevelOptions
+    callback: Callback<ProfilingLevel>,
+  ): void;
+  setProfilingLevel(
+    level: ProfilingLevel,
+    options: SetProfilingLevelOptions,
   ): Promise<ProfilingLevel>;
   setProfilingLevel(
     level: ProfilingLevel,
     options: SetProfilingLevelOptions,
-    callback: Callback<ProfilingLevel>
+    callback: Callback<ProfilingLevel>,
   ): void;
   setProfilingLevel(
     level: ProfilingLevel,
     options?: SetProfilingLevelOptions | Callback<ProfilingLevel>,
-    callback?: Callback<ProfilingLevel>
+    callback?: Callback<ProfilingLevel>,
   ): Promise<ProfilingLevel> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
-      new SetProfilingLevelOperation(this, level, resolveOptions(this, options)),
-      callback
+      new SetProfilingLevelOperation(
+        this,
+        level,
+        resolveOptions(this, options),
+      ),
+      callback,
     );
   }
 
@@ -663,17 +754,20 @@ export class Db {
   profilingLevel(): Promise<string>;
   profilingLevel(callback: Callback<string>): void;
   profilingLevel(options: ProfilingLevelOptions): Promise<string>;
-  profilingLevel(options: ProfilingLevelOptions, callback: Callback<string>): void;
+  profilingLevel(
+    options: ProfilingLevelOptions,
+    callback: Callback<string>,
+  ): void;
   profilingLevel(
     options?: ProfilingLevelOptions | Callback<string>,
-    callback?: Callback<string>
+    callback?: Callback<string>,
   ): Promise<string> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new ProfilingLevelOperation(this, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -686,23 +780,26 @@ export class Db {
    */
   indexInformation(name: string): Promise<Document>;
   indexInformation(name: string, callback: Callback<Document>): void;
-  indexInformation(name: string, options: IndexInformationOptions): Promise<Document>;
   indexInformation(
     name: string,
     options: IndexInformationOptions,
-    callback: Callback<Document>
+  ): Promise<Document>;
+  indexInformation(
+    name: string,
+    options: IndexInformationOptions,
+    callback: Callback<Document>,
   ): void;
   indexInformation(
     name: string,
     options?: IndexInformationOptions | Callback<Document>,
-    callback?: Callback<Document>
+    callback?: Callback<Document>,
   ): Promise<Document> | void {
-    if (typeof options === 'function') (callback = options), (options = {});
+    if (typeof options === "function") (callback = options), (options = {});
 
     return executeOperation(
       this,
       new IndexInformationOperation(this, name, resolveOptions(this, options)),
-      callback
+      callback,
     );
   }
 
@@ -724,7 +821,7 @@ export class Db {
    */
   watch<TSchema extends Document = Document>(
     pipeline: Document[] = [],
-    options: ChangeStreamOptions = {}
+    options: ChangeStreamOptions = {},
   ): ChangeStream<TSchema> {
     // Allow optionally not specifying a pipeline
     if (!Array.isArray(pipeline)) {
@@ -732,7 +829,11 @@ export class Db {
       pipeline = [];
     }
 
-    return new ChangeStream<TSchema>(this, pipeline, resolveOptions(this, options));
+    return new ChangeStream<TSchema>(
+      this,
+      pipeline,
+      resolveOptions(this, options),
+    );
   }
 
   /** Return the db logger */
@@ -748,15 +849,22 @@ export class Db {
 // TODO(NODE-3484): Refactor into MongoDBNamespace
 // Validate the database name
 function validateDatabaseName(databaseName: string) {
-  if (typeof databaseName !== 'string')
-    throw new MongoInvalidArgumentError('Database name must be a string');
-  if (databaseName.length === 0)
-    throw new MongoInvalidArgumentError('Database name cannot be the empty string');
-  if (databaseName === '$external') return;
+  if (typeof databaseName !== "string") {
+    throw new MongoInvalidArgumentError("Database name must be a string");
+  }
+  if (databaseName.length === 0) {
+    throw new MongoInvalidArgumentError(
+      "Database name cannot be the empty string",
+    );
+  }
+  if (databaseName === "$external") return;
 
-  const invalidChars = [' ', '.', '$', '/', '\\'];
+  const invalidChars = [" ", ".", "$", "/", "\\"];
   for (let i = 0; i < invalidChars.length; i++) {
-    if (databaseName.indexOf(invalidChars[i]) !== -1)
-      throw new MongoAPIError(`database names cannot contain the character '${invalidChars[i]}'`);
+    if (databaseName.indexOf(invalidChars[i]) !== -1) {
+      throw new MongoAPIError(
+        `database names cannot contain the character '${invalidChars[i]}'`,
+      );
+    }
   }
 }

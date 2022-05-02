@@ -1,9 +1,9 @@
-import type { Db } from '../db.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
-import type { Callback } from '../utils.ts';
-import { CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects } from './operation.ts';
+import type { Db } from "../db.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
+import type { Callback } from "../utils.ts";
+import { CommandOperation, CommandOperationOptions } from "./command.ts";
+import { Aspect, defineAspects } from "./operation.ts";
 
 /** @public */
 export type DropCollectionOptions = CommandOperationOptions;
@@ -22,13 +22,18 @@ export class DropCollectionOperation extends CommandOperation<boolean> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<boolean>
+    callback: Callback<boolean>,
   ): void {
-    super.executeCommand(server, session, { drop: this.name }, (err, result) => {
-      if (err) return callback(err);
-      if (result.ok) return callback(undefined, true);
-      callback(undefined, false);
-    });
+    super.executeCommand(
+      server,
+      session,
+      { drop: this.name },
+      (err, result) => {
+        if (err) return callback(err);
+        if (result.ok) return callback(undefined, true);
+        callback(undefined, false);
+      },
+    );
   }
 }
 
@@ -46,13 +51,18 @@ export class DropDatabaseOperation extends CommandOperation<boolean> {
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<boolean>
+    callback: Callback<boolean>,
   ): void {
-    super.executeCommand(server, session, { dropDatabase: 1 }, (err, result) => {
-      if (err) return callback(err);
-      if (result.ok) return callback(undefined, true);
-      callback(undefined, false);
-    });
+    super.executeCommand(
+      server,
+      session,
+      { dropDatabase: 1 },
+      (err, result) => {
+        if (err) return callback(err);
+        if (result.ok) return callback(undefined, true);
+        callback(undefined, false);
+      },
+    );
   }
 }
 

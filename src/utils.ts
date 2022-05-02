@@ -36,8 +36,7 @@ import type { Server } from "./sdam/server.ts";
 import type { Topology } from "./sdam/topology.ts";
 import type { ClientSession } from "./sessions.ts";
 import { W, WriteConcern, WriteConcernOptions } from "./write_concern.ts";
-import { nextTick } from "next-tick";
-import { Buffer } from "buffer";
+import { Buffer, nextTick } from "../deps.ts"
 
 /**
  * MongoDB Driver style callback
@@ -429,10 +428,6 @@ export function deprecateOptions(
   config: DeprecateOptionsConfig,
   fn: (...args: any[]) => any,
 ): any {
-  if ((process as any).noDeprecation === true) {
-    return fn;
-  }
-
   const msgHandler = config.msgHandler ? config.msgHandler : defaultMsgHandler;
 
   const optionsWarned = new Set();
@@ -449,7 +444,7 @@ export function deprecateOptions(
       if (deprecatedOption in options && !optionsWarned.has(deprecatedOption)) {
         optionsWarned.add(deprecatedOption);
         const msg = msgHandler(config.name, deprecatedOption);
-        emitWarning(msg);
+        console.warn(msg);
         if (this && "getLogger" in this) {
           const logger = this.getLogger();
           if (logger) {
@@ -787,7 +782,7 @@ export interface ClientMetadata {
   };
   os: {
     type: string;
-    name: NodeJS.Platform;
+    name: string;
     architecture: string;
     version: string;
   };
@@ -909,7 +904,7 @@ export function makeInterruptibleAsyncInterval(
   fn: (callback: Callback) => void,
   options?: Partial<InterruptibleAsyncIntervalOptions>,
 ): InterruptibleAsyncInterval {
-  let timerId: NodeJS.Timeout | undefined;
+  let timerId: number | undefined;
   let lastCallTime: number;
   let cannotBeExpedited = false;
   let stopped = false;
@@ -1358,11 +1353,6 @@ export const DEFAULT_PK_FACTORY = {
  */
 export const MONGODB_WARNING_CODE = "MONGODB DRIVER" as const;
 
-/** @internal */
-export function emitWarning(message: string): void {
-  return process.emitWarning(message, { code: MONGODB_WARNING_CODE } as any);
-}
-
 const emittedWarnings = new Set();
 /**
  * Will emit a warning once for the duration of the application.
@@ -1372,8 +1362,7 @@ const emittedWarnings = new Set();
  */
 export function emitWarningOnce(message: string): void {
   if (!emittedWarnings.has(message)) {
-    emittedWarnings.add(message);
-    return emitWarning(message);
+    return console.warn(message);
   }
 }
 

@@ -1,5 +1,5 @@
 /** @public */
-export type W = number | 'majority';
+export type W = number | "majority";
 
 /** @public */
 export interface WriteConcernOptions {
@@ -25,7 +25,7 @@ export interface WriteConcernSettings {
   fsync?: boolean | 1;
 }
 
-export const WRITE_CONCERN_KEYS = ['w', 'wtimeout', 'j', 'journal', 'fsync'];
+export const WRITE_CONCERN_KEYS = ["w", "wtimeout", "j", "journal", "fsync"];
 
 /**
  * A MongoDB WriteConcern, which describes the level of acknowledgement
@@ -73,12 +73,12 @@ export class WriteConcern {
   /** Construct a WriteConcern given an options object. */
   static fromOptions(
     options?: WriteConcernOptions | WriteConcern | W,
-    inherit?: WriteConcernOptions | WriteConcern
+    inherit?: WriteConcernOptions | WriteConcern,
   ): WriteConcern | undefined {
     if (options == null) return undefined;
     inherit = inherit ?? {};
     let opts: WriteConcernSettings | WriteConcern | undefined;
-    if (typeof options === 'string' || typeof options === 'number') {
+    if (typeof options === "string" || typeof options === "number") {
       opts = { w: options };
     } else if (options instanceof WriteConcern) {
       opts = options;
@@ -94,10 +94,10 @@ export class WriteConcern {
       j = undefined,
       fsync = undefined,
       journal = undefined,
-      wtimeoutMS = undefined
+      wtimeoutMS = undefined,
     } = {
       ...parentOpts,
-      ...opts
+      ...opts,
     };
     if (
       w != null ||

@@ -1,17 +1,25 @@
-import type { Document, ObjectId } from '../bson.ts';
-import type { Collection } from '../collection.ts';
-import { MongoCompatibilityError, MongoInvalidArgumentError, MongoServerError } from '../error.ts';
-import type { Server } from '../sdam/server.ts';
-import type { ClientSession } from '../sessions.ts';
+import type { Document, ObjectId } from "../bson.ts";
+import type { Collection } from "../collection.ts";
+import {
+  MongoCompatibilityError,
+  MongoInvalidArgumentError,
+  MongoServerError,
+} from "../error.ts";
+import type { Server } from "../sdam/server.ts";
+import type { ClientSession } from "../sessions.ts";
 import {
   Callback,
   collationNotSupported,
   hasAtomicOperators,
   maxWireVersion,
-  MongoDBNamespace
-} from '../utils.ts';
-import { CollationOptions, CommandOperation, CommandOperationOptions } from './command.ts';
-import { Aspect, defineAspects, Hint } from './operation.ts';
+  MongoDBNamespace,
+} from "../utils.ts";
+import {
+  CollationOptions,
+  CommandOperation,
+  CommandOperationOptions,
+} from "./command.ts";
+import { Aspect, defineAspects, Hint } from "./operation.ts";
 
 /** @public */
 export interface UpdateOptions extends CommandOperationOptions {
@@ -69,7 +77,7 @@ export class UpdateOperation extends CommandOperation<Document> {
   constructor(
     ns: MongoDBNamespace,
     statements: UpdateStatement[],
-    options: UpdateOptions & { ordered?: boolean }
+    options: UpdateOptions & { ordered?: boolean },
   ) {
     super(undefined, options);
     this.options = options;
@@ -83,23 +91,27 @@ export class UpdateOperation extends CommandOperation<Document> {
       return false;
     }
 
-    return this.statements.every(op => op.multi == null || op.multi === false);
+    return this.statements.every((op) =>
+      op.multi == null || op.multi === false
+    );
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<Document>
+    callback: Callback<Document>,
   ): void {
     const options = this.options ?? {};
-    const ordered = typeof options.ordered === 'boolean' ? options.ordered : true;
+    const ordered = typeof options.ordered === "boolean"
+      ? options.ordered
+      : true;
     const command: Document = {
       update: this.ns.collection,
       updates: this.statements,
-      ordered
+      ordered,
     };
 
-    if (typeof options.bypassDocumentValidation === 'boolean') {
+    if (typeof options.bypassDocumentValidation === "boolean") {
       command.bypassDocumentValidation = options.bypassDocumentValidation;
     }
 
@@ -113,33 +125,51 @@ export class UpdateOperation extends CommandOperation<Document> {
       command.comment = options.comment;
     }
 
-    const statementWithCollation = this.statements.find(statement => !!statement.collation);
+    const statementWithCollation = this.statements.find((statement) =>
+      !!statement.collation
+    );
     if (
       collationNotSupported(server, options) ||
-      (statementWithCollation && collationNotSupported(server, statementWithCollation))
+      (statementWithCollation &&
+        collationNotSupported(server, statementWithCollation))
     ) {
-      callback(new MongoCompatibilityError(`Server ${server.name} does not support collation`));
+      callback(
+        new MongoCompatibilityError(
+          `Server ${server.name} does not support collation`,
+        ),
+      );
       return;
     }
 
     const unacknowledgedWrite = this.writeConcern && this.writeConcern.w === 0;
     if (unacknowledgedWrite || maxWireVersion(server) < 5) {
       if (this.statements.find((o: Document) => o.hint)) {
-        callback(new MongoCompatibilityError(`Servers < 3.4 do not support hint on update`));
+        callback(
+          new MongoCompatibilityError(
+            `Servers < 3.4 do not support hint on update`,
+          ),
+        );
         return;
       }
     }
 
     if (this.explain && maxWireVersion(server) < 3) {
       callback(
-        new MongoCompatibilityError(`Server ${server.name} does not support explain on update`)
+        new MongoCompatibilityError(
+          `Server ${server.name} does not support explain on update`,
+        ),
       );
       return;
     }
 
-    if (this.statements.some(statement => !!statement.arrayFilters) && maxWireVersion(server) < 6) {
+    if (
+      this.statements.some((statement) => !!statement.arrayFilters) &&
+      maxWireVersion(server) < 6
+    ) {
       callback(
-        new MongoCompatibilityError('Option "arrayFilters" is only supported on MongoDB 3.6+')
+        new MongoCompatibilityError(
+          'Option "arrayFilters" is only supported on MongoDB 3.6+',
+        ),
       );
       return;
     }
@@ -150,36 +180,50 @@ export class UpdateOperation extends CommandOperation<Document> {
 
 /** @internal */
 export class UpdateOneOperation extends UpdateOperation {
-  constructor(collection: Collection, filter: Document, update: Document, options: UpdateOptions) {
+  constructor(
+    collection: Collection,
+    filter: Document,
+    update: Document,
+    options: UpdateOptions,
+  ) {
     super(
       collection.s.namespace,
       [makeUpdateStatement(filter, update, { ...options, multi: false })],
-      options
+      options,
     );
 
     if (!hasAtomicOperators(update)) {
-      throw new MongoInvalidArgumentError('Update document requires atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Update document requires atomic operators",
+      );
     }
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void {
     super.execute(server, session, (err, res) => {
       if (err || !res) return callback(err);
       if (this.explain != null) return callback(undefined, res);
       if (res.code) return callback(new MongoServerError(res));
-      if (res.writeErrors) return callback(new MongoServerError(res.writeErrors[0]));
+      if (res.writeErrors) {
+        return callback(new MongoServerError(res.writeErrors[0]));
+      }
 
       callback(undefined, {
         acknowledged: this.writeConcern?.w !== 0 ?? true,
         modifiedCount: res.nModified != null ? res.nModified : res.n,
-        upsertedId:
-          Array.isArray(res.upserted) && res.upserted.length > 0 ? res.upserted[0]._id : null,
-        upsertedCount: Array.isArray(res.upserted) && res.upserted.length ? res.upserted.length : 0,
-        matchedCount: Array.isArray(res.upserted) && res.upserted.length > 0 ? 0 : res.n
+        upsertedId: Array.isArray(res.upserted) && res.upserted.length > 0
+          ? res.upserted[0]._id
+          : null,
+        upsertedCount: Array.isArray(res.upserted) && res.upserted.length
+          ? res.upserted.length
+          : 0,
+        matchedCount: Array.isArray(res.upserted) && res.upserted.length > 0
+          ? 0
+          : res.n,
       });
     });
   }
@@ -187,36 +231,50 @@ export class UpdateOneOperation extends UpdateOperation {
 
 /** @internal */
 export class UpdateManyOperation extends UpdateOperation {
-  constructor(collection: Collection, filter: Document, update: Document, options: UpdateOptions) {
+  constructor(
+    collection: Collection,
+    filter: Document,
+    update: Document,
+    options: UpdateOptions,
+  ) {
     super(
       collection.s.namespace,
       [makeUpdateStatement(filter, update, { ...options, multi: true })],
-      options
+      options,
     );
 
     if (!hasAtomicOperators(update)) {
-      throw new MongoInvalidArgumentError('Update document requires atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Update document requires atomic operators",
+      );
     }
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void {
     super.execute(server, session, (err, res) => {
       if (err || !res) return callback(err);
       if (this.explain != null) return callback(undefined, res);
       if (res.code) return callback(new MongoServerError(res));
-      if (res.writeErrors) return callback(new MongoServerError(res.writeErrors[0]));
+      if (res.writeErrors) {
+        return callback(new MongoServerError(res.writeErrors[0]));
+      }
 
       callback(undefined, {
         acknowledged: this.writeConcern?.w !== 0 ?? true,
         modifiedCount: res.nModified != null ? res.nModified : res.n,
-        upsertedId:
-          Array.isArray(res.upserted) && res.upserted.length > 0 ? res.upserted[0]._id : null,
-        upsertedCount: Array.isArray(res.upserted) && res.upserted.length ? res.upserted.length : 0,
-        matchedCount: Array.isArray(res.upserted) && res.upserted.length > 0 ? 0 : res.n
+        upsertedId: Array.isArray(res.upserted) && res.upserted.length > 0
+          ? res.upserted[0]._id
+          : null,
+        upsertedCount: Array.isArray(res.upserted) && res.upserted.length
+          ? res.upserted.length
+          : 0,
+        matchedCount: Array.isArray(res.upserted) && res.upserted.length > 0
+          ? 0
+          : res.n,
       });
     });
   }
@@ -242,37 +300,46 @@ export class ReplaceOneOperation extends UpdateOperation {
     collection: Collection,
     filter: Document,
     replacement: Document,
-    options: ReplaceOptions
+    options: ReplaceOptions,
   ) {
     super(
       collection.s.namespace,
       [makeUpdateStatement(filter, replacement, { ...options, multi: false })],
-      options
+      options,
     );
 
     if (hasAtomicOperators(replacement)) {
-      throw new MongoInvalidArgumentError('Replacement document must not contain atomic operators');
+      throw new MongoInvalidArgumentError(
+        "Replacement document must not contain atomic operators",
+      );
     }
   }
 
   override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<UpdateResult | Document>
+    callback: Callback<UpdateResult | Document>,
   ): void {
     super.execute(server, session, (err, res) => {
       if (err || !res) return callback(err);
       if (this.explain != null) return callback(undefined, res);
       if (res.code) return callback(new MongoServerError(res));
-      if (res.writeErrors) return callback(new MongoServerError(res.writeErrors[0]));
+      if (res.writeErrors) {
+        return callback(new MongoServerError(res.writeErrors[0]));
+      }
 
       callback(undefined, {
         acknowledged: this.writeConcern?.w !== 0 ?? true,
         modifiedCount: res.nModified != null ? res.nModified : res.n,
-        upsertedId:
-          Array.isArray(res.upserted) && res.upserted.length > 0 ? res.upserted[0]._id : null,
-        upsertedCount: Array.isArray(res.upserted) && res.upserted.length ? res.upserted.length : 0,
-        matchedCount: Array.isArray(res.upserted) && res.upserted.length > 0 ? 0 : res.n
+        upsertedId: Array.isArray(res.upserted) && res.upserted.length > 0
+          ? res.upserted[0]._id
+          : null,
+        upsertedCount: Array.isArray(res.upserted) && res.upserted.length
+          ? res.upserted.length
+          : 0,
+        matchedCount: Array.isArray(res.upserted) && res.upserted.length > 0
+          ? 0
+          : res.n,
       });
     });
   }
@@ -281,18 +348,22 @@ export class ReplaceOneOperation extends UpdateOperation {
 export function makeUpdateStatement(
   filter: Document,
   update: Document,
-  options: UpdateOptions & { multi?: boolean }
+  options: UpdateOptions & { multi?: boolean },
 ): UpdateStatement {
-  if (filter == null || typeof filter !== 'object') {
-    throw new MongoInvalidArgumentError('Selector must be a valid JavaScript object');
+  if (filter == null || typeof filter !== "object") {
+    throw new MongoInvalidArgumentError(
+      "Selector must be a valid JavaScript object",
+    );
   }
 
-  if (update == null || typeof update !== 'object') {
-    throw new MongoInvalidArgumentError('Document must be a valid JavaScript object');
+  if (update == null || typeof update !== "object") {
+    throw new MongoInvalidArgumentError(
+      "Document must be a valid JavaScript object",
+    );
   }
 
   const op: UpdateStatement = { q: filter, u: update };
-  if (typeof options.upsert === 'boolean') {
+  if (typeof options.upsert === "boolean") {
     op.upsert = options.upsert;
   }
 
@@ -315,20 +386,24 @@ export function makeUpdateStatement(
   return op;
 }
 
-defineAspects(UpdateOperation, [Aspect.RETRYABLE, Aspect.WRITE_OPERATION, Aspect.SKIP_COLLATION]);
+defineAspects(UpdateOperation, [
+  Aspect.RETRYABLE,
+  Aspect.WRITE_OPERATION,
+  Aspect.SKIP_COLLATION,
+]);
 defineAspects(UpdateOneOperation, [
   Aspect.RETRYABLE,
   Aspect.WRITE_OPERATION,
   Aspect.EXPLAINABLE,
-  Aspect.SKIP_COLLATION
+  Aspect.SKIP_COLLATION,
 ]);
 defineAspects(UpdateManyOperation, [
   Aspect.WRITE_OPERATION,
   Aspect.EXPLAINABLE,
-  Aspect.SKIP_COLLATION
+  Aspect.SKIP_COLLATION,
 ]);
 defineAspects(ReplaceOneOperation, [
   Aspect.RETRYABLE,
   Aspect.WRITE_OPERATION,
-  Aspect.SKIP_COLLATION
+  Aspect.SKIP_COLLATION,
 ]);

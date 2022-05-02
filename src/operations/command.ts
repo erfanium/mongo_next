@@ -1,22 +1,25 @@
-import type { BSONSerializeOptions, Document } from '../bson.ts';
-import { MongoCompatibilityError, MongoInvalidArgumentError } from '../error.ts';
-import { Explain, ExplainOptions } from '../explain.ts';
-import type { Logger } from '../logger.ts';
-import { ReadConcern } from '../read_concern.ts';
-import type { ReadPreference } from '../read_preference.ts';
-import type { Server } from '../sdam/server.ts';
-import { MIN_SECONDARY_WRITE_WIRE_VERSION } from '../sdam/server_selection.ts';
-import type { ClientSession } from '../sessions.ts';
+import type { BSONSerializeOptions, Document } from "../bson.ts";
+import {
+  MongoCompatibilityError,
+  MongoInvalidArgumentError,
+} from "../error.ts";
+import { Explain, ExplainOptions } from "../explain.ts";
+import type { Logger } from "../logger.ts";
+import { ReadConcern } from "../read_concern.ts";
+import type { ReadPreference } from "../read_preference.ts";
+import type { Server } from "../sdam/server.ts";
+import { MIN_SECONDARY_WRITE_WIRE_VERSION } from "../sdam/server_selection.ts";
+import type { ClientSession } from "../sessions.ts";
 import {
   Callback,
   commandSupportsReadConcern,
   decorateWithExplain,
   maxWireVersion,
-  MongoDBNamespace
-} from '../utils.ts';
-import { WriteConcern, WriteConcernOptions } from '../write_concern.ts';
-import type { ReadConcernLike } from './../read_concern.ts';
-import { AbstractOperation, Aspect, OperationOptions } from './operation.ts';
+  MongoDBNamespace,
+} from "../utils.ts";
+import { WriteConcern, WriteConcernOptions } from "../write_concern.ts";
+import type { ReadConcernLike } from "./../read_concern.ts";
+import { AbstractOperation, Aspect, OperationOptions } from "./operation.ts";
 
 const SUPPORTS_WRITE_CONCERN_AND_COLLATION = 5;
 
@@ -35,9 +38,7 @@ export interface CollationOptions {
 
 /** @public */
 export interface CommandOperationOptions
-  extends OperationOptions,
-    WriteConcernOptions,
-    ExplainOptions {
+  extends OperationOptions, WriteConcernOptions, ExplainOptions {
   /** @deprecated This option does nothing */
   fullResponse?: boolean;
   /** Specify a read concern and level for the collection. (only MongoDB 3.2 or higher supported) */
@@ -90,11 +91,11 @@ export abstract class CommandOperation<T> extends AbstractOperation<T> {
     //       as a parent?
     const dbNameOverride = options?.dbName || options?.authdb;
     if (dbNameOverride) {
-      this.ns = new MongoDBNamespace(dbNameOverride, '$cmd');
+      this.ns = new MongoDBNamespace(dbNameOverride, "$cmd");
     } else {
       this.ns = parent
-        ? parent.s.namespace.withCollection('$cmd')
-        : new MongoDBNamespace('admin', '$cmd');
+        ? parent.s.namespace.withCollection("$cmd")
+        : new MongoDBNamespace("admin", "$cmd");
     }
 
     this.readConcern = ReadConcern.fromOptions(options);
@@ -108,7 +109,9 @@ export abstract class CommandOperation<T> extends AbstractOperation<T> {
     if (this.hasAspect(Aspect.EXPLAINABLE)) {
       this.explain = Explain.fromOptions(options);
     } else if (options?.explain != null) {
-      throw new MongoInvalidArgumentError(`Option "explain" is not supported on this command`);
+      throw new MongoInvalidArgumentError(
+        `Option "explain" is not supported on this command`,
+      );
     }
   }
 
@@ -122,14 +125,14 @@ export abstract class CommandOperation<T> extends AbstractOperation<T> {
   abstract override execute(
     server: Server,
     session: ClientSession | undefined,
-    callback: Callback<T>
+    callback: Callback<T>,
   ): void;
 
   executeCommand(
     server: Server,
     session: ClientSession | undefined,
     cmd: Document,
-    callback: Callback
+    callback: Callback,
   ): void {
     // TODO: consider making this a non-enumerable property
     this.server = server;
@@ -138,7 +141,7 @@ export abstract class CommandOperation<T> extends AbstractOperation<T> {
       ...this.options,
       ...this.bsonOptions,
       readPreference: this.readPreference,
-      session
+      session,
     };
 
     const serverWireVersion = maxWireVersion(server);
@@ -148,34 +151,43 @@ export abstract class CommandOperation<T> extends AbstractOperation<T> {
       Object.assign(cmd, { readConcern: this.readConcern });
     }
 
-    if (this.trySecondaryWrite && serverWireVersion < MIN_SECONDARY_WRITE_WIRE_VERSION) {
+    if (
+      this.trySecondaryWrite &&
+      serverWireVersion < MIN_SECONDARY_WRITE_WIRE_VERSION
+    ) {
       options.omitReadPreference = true;
     }
 
-    if (options.collation && serverWireVersion < SUPPORTS_WRITE_CONCERN_AND_COLLATION) {
+    if (
+      options.collation &&
+      serverWireVersion < SUPPORTS_WRITE_CONCERN_AND_COLLATION
+    ) {
       callback(
         new MongoCompatibilityError(
-          `Server ${server.name}, which reports wire version ${serverWireVersion}, does not support collation`
-        )
+          `Server ${server.name}, which reports wire version ${serverWireVersion}, does not support collation`,
+        ),
       );
       return;
     }
 
-    if (this.writeConcern && this.hasAspect(Aspect.WRITE_OPERATION) && !inTransaction) {
+    if (
+      this.writeConcern && this.hasAspect(Aspect.WRITE_OPERATION) &&
+      !inTransaction
+    ) {
       Object.assign(cmd, { writeConcern: this.writeConcern });
     }
 
     if (serverWireVersion >= SUPPORTS_WRITE_CONCERN_AND_COLLATION) {
       if (
         options.collation &&
-        typeof options.collation === 'object' &&
+        typeof options.collation === "object" &&
         !this.hasAspect(Aspect.SKIP_COLLATION)
       ) {
         Object.assign(cmd, { collation: options.collation });
       }
     }
 
-    if (typeof options.maxTimeMS === 'number') {
+    if (typeof options.maxTimeMS === "number") {
       cmd.maxTimeMS = options.maxTimeMS;
     }
 

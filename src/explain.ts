@@ -1,12 +1,14 @@
-import { MongoInvalidArgumentError } from './error.ts';
+import { MongoInvalidArgumentError } from "./error.ts";
 
 /** @public */
-export const ExplainVerbosity = Object.freeze({
-  queryPlanner: 'queryPlanner',
-  queryPlannerExtended: 'queryPlannerExtended',
-  executionStats: 'executionStats',
-  allPlansExecution: 'allPlansExecution'
-} as const);
+export const ExplainVerbosity = Object.freeze(
+  {
+    queryPlanner: "queryPlanner",
+    queryPlannerExtended: "queryPlannerExtended",
+    executionStats: "executionStats",
+    allPlansExecution: "allPlansExecution",
+  } as const,
+);
 
 /** @public */
 export type ExplainVerbosity = string;
@@ -30,7 +32,7 @@ export class Explain {
   verbosity: ExplainVerbosity;
 
   constructor(verbosity: ExplainVerbosityLike) {
-    if (typeof verbosity === 'boolean') {
+    if (typeof verbosity === "boolean") {
       this.verbosity = verbosity
         ? ExplainVerbosity.allPlansExecution
         : ExplainVerbosity.queryPlanner;
@@ -43,10 +45,12 @@ export class Explain {
     if (options?.explain == null) return;
 
     const explain = options.explain;
-    if (typeof explain === 'boolean' || typeof explain === 'string') {
+    if (typeof explain === "boolean" || typeof explain === "string") {
       return new Explain(explain);
     }
 
-    throw new MongoInvalidArgumentError('Field "explain" must be a string or a boolean');
+    throw new MongoInvalidArgumentError(
+      'Field "explain" must be a string or a boolean',
+    );
   }
 }
