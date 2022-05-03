@@ -150,7 +150,6 @@ export class Encrypter {
   static checkForMongoCrypt(): void {
     throw new Error("MongoCrypt is not supported");
 
-
     // let mongodbClientEncryption = undefined;
     // try {
     //   // Ensure you always wrap an optional require in the try block NODE-3199

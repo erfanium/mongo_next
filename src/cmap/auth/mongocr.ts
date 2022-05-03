@@ -1,5 +1,4 @@
-import * as crypto from "crypto";
-
+import { Crypto } from "../../../deps.ts";
 import { MongoMissingCredentialsError } from "../../error.ts";
 import { Callback, ns } from "../../utils.ts";
 import { AuthContext, AuthProvider } from "./auth_provider.ts";
@@ -30,14 +29,14 @@ export class MongoCR extends AuthProvider {
           nonce = r.nonce;
 
           // Use node md5 generator
-          let md5 = crypto.createHash("md5");
+          let md5 = Crypto.createHash("md5");
 
           // Generate keys used for authentication
           md5.update(`${username}:mongo:${password}`, "utf8");
           const hash_password = md5.digest("hex");
 
           // Final key
-          md5 = crypto.createHash("md5");
+          md5 = Crypto.createHash("md5");
           md5.update(nonce + username + hash_password, "utf8");
           key = md5.digest("hex");
         }

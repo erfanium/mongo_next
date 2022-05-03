@@ -1,5 +1,4 @@
-import * as zlib from "zlib";
-
+import { Buffer, Zlib } from "../../../deps.ts";
 import { LEGACY_HELLO_COMMAND } from "../../constants.ts";
 import { PKG_VERSION } from "../../deps.ts";
 import {
@@ -39,11 +38,11 @@ export const uncompressibleCommands = new Set([
 
 // Facilitate compressing a message using an agreed compressor
 export function compress(
-  self: { options: OperationDescription & zlib.ZlibOptions },
+  self: { options: OperationDescription & Zlib.Options },
   dataToBeCompressed: Buffer,
   callback: Callback<Buffer>,
 ): void {
-  const zlibOptions = {} as zlib.ZlibOptions;
+  const zlibOptions = {} as Zlib.Options;
   switch (self.options.agreedCompressor) {
     // case 'snappy': { // TODO(erfan)
     //   if ('kModuleError' in Snappy) {
@@ -64,10 +63,10 @@ export function compress(
       if (self.options.zlibCompressionLevel) {
         zlibOptions.level = self.options.zlibCompressionLevel;
       }
-      zlib.deflate(
+      Zlib.default.deflate(
         dataToBeCompressed,
         zlibOptions,
-        callback as zlib.CompressCallback,
+        callback,
       );
       break;
     default:
@@ -105,7 +104,7 @@ export function decompress(
     //   break;
     // }
     case Compressor.zlib:
-      zlib.inflate(compressedData, callback as zlib.CompressCallback);
+      Zlib.default.inflate(compressedData, callback);
       break;
     default:
       callback(undefined, compressedData);

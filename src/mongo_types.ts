@@ -1,5 +1,5 @@
-import type { Bson } from "../deps.ts";
-import { EventEmitter } from "events";
+import type { Bson, Buffer } from "../deps.ts";
+import { Events } from "../deps.ts";
 
 import type {
   Binary,
@@ -394,7 +394,7 @@ export type CommonEvents = "newListener" | "removeListener";
  * @public
  */
 export declare interface TypedEventEmitter<Events extends EventsDescription>
-  extends EventEmitter {
+  extends Events.EventEmitter {
   addListener<EventKey extends keyof Events>(
     event: EventKey,
     listener: Events[EventKey],
@@ -497,7 +497,7 @@ export declare interface TypedEventEmitter<Events extends EventsDescription>
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class TypedEventEmitter<Events extends EventsDescription>
-  extends EventEmitter {}
+  extends Events.EventEmitter {}
 
 /** @public */
 export class CancellationToken extends TypedEventEmitter<{ cancel(): void }> {}

@@ -1,5 +1,4 @@
-import * as crypto from "crypto";
-
+import { Crypto } from "../../deps.ts";
 import type { Document } from "../bson.ts";
 import type { Db } from "../db.ts";
 import { MongoInvalidArgumentError } from "../error.ts";
@@ -100,7 +99,7 @@ export class AddUserOperation extends CommandOperation<Document> {
 
     if (!digestPassword) {
       // Use node md5 generator
-      const md5 = crypto.createHash("md5");
+      const md5 = Crypto.createHash("md5");
       // Generate keys used for authentication
       md5.update(`${username}:mongo:${password}`);
       userPassword = md5.digest("hex");

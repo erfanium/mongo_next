@@ -1,8 +1,5 @@
-import type { TcpNetConnectOpts } from "net";
-import type {
-  ConnectionOptions as TLSConnectionOptions,
-  TLSSocketOptions,
-} from "tls";
+import type { Net, TLS } from "../deps.ts";
+import type { TLSSocketOptions } from "tls";
 
 import { BSONSerializeOptions, Document, resolveBSONOptions } from "./bson.ts";
 import { ChangeStream, ChangeStreamOptions } from "./change_stream.ts";
@@ -88,8 +85,8 @@ export interface PkFactory {
 
 /** @public */
 export type SupportedTLSConnectionOptions = Pick<
-  TLSConnectionOptions,
-  Extract<keyof TLSConnectionOptions, typeof LEGAL_TLS_SOCKET_OPTIONS[number]>
+  TLS.ConnectionOptions,
+  Extract<keyof TLS.ConnectionOptions, typeof LEGAL_TLS_SOCKET_OPTIONS[number]>
 >;
 
 /** @public */

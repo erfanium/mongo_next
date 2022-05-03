@@ -1,4 +1,4 @@
-import * as dns from "dns";
+import { Dns } from "../../deps.ts";
 
 import { MongoRuntimeError } from "../error.ts";
 import { Logger, LoggerOptions } from "../logger.ts";
@@ -28,7 +28,7 @@ function matchesParentDomain(
  * @category Event
  */
 export class SrvPollingEvent {
-  srvRecords: dns.SrvRecord[];
+  srvRecords: SrvRecord[];
   constructor(srvRecords: dns.SrvRecord[]) {
     this.srvRecords = srvRecords;
   }
@@ -120,19 +120,19 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
     this._timeout = setTimeout(() => this._poll(), this.intervalMS);
   }
 
-  success(srvRecords: dns.SrvRecord[]): void {
+  success(srvRecords: any): void {
     this.haMode = false;
     this.schedule();
     this.emit(SrvPoller.SRV_RECORD_DISCOVERY, new SrvPollingEvent(srvRecords));
   }
 
-  failure(message: string, obj?: NodeJS.ErrnoException): void {
+  failure(message: string, obj?: any): void {
     this.logger.warn(message, obj);
     this.haMode = true;
     this.schedule();
   }
 
-  parentDomainMismatch(srvRecord: dns.SrvRecord): void {
+  parentDomainMismatch(srvRecord: any): void {
     this.logger.warn(
       `parent domain mismatch on SRV record (${srvRecord.name}:${srvRecord.port})`,
       srvRecord,
@@ -141,7 +141,7 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
 
   _poll(): void {
     const generation = this.generation;
-    dns.resolveSrv(this.srvAddress, (err, srvRecords) => {
+    Dns.resolveSrv(this.srvAddress, (err, srvRecords) => {
       if (generation !== this.generation) {
         return;
       }
@@ -151,7 +151,7 @@ export class SrvPoller extends TypedEventEmitter<SrvPollerEvents> {
         return;
       }
 
-      const finalAddresses: dns.SrvRecord[] = [];
+      const finalAddresses: any[] = [];
       for (const record of srvRecords) {
         if (matchesParentDomain(record.name, this.srvHost)) {
           finalAddresses.push(record);

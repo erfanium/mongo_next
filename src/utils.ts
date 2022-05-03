@@ -1,6 +1,3 @@
-import * as crypto from "crypto";
-import type { SrvRecord } from "dns";
-
 import { Document, ObjectId, resolveBSONOptions } from "./bson.ts";
 import type { Connection } from "./cmap/connection.ts";
 import { MAX_SUPPORTED_WIRE_VERSION } from "./cmap/wire_protocol/constants.ts";
@@ -36,7 +33,7 @@ import type { Server } from "./sdam/server.ts";
 import type { Topology } from "./sdam/topology.ts";
 import type { ClientSession } from "./sessions.ts";
 import { W, WriteConcern, WriteConcernOptions } from "./write_concern.ts";
-import { Buffer, nextTick } from "../deps.ts"
+import { Buffer, Crypto, nextTick } from "../deps.ts";
 
 /**
  * MongoDB Driver style callback
@@ -573,7 +570,7 @@ export function databaseNamespace(ns: string): string {
  * @internal
  */
 export function uuidV4(): Buffer {
-  const result = crypto.randomBytes(16);
+  const result = Crypto.randomBytes(16);
   result[6] = (result[6] & 0x0f) | 0x40;
   result[8] = (result[8] & 0x3f) | 0x80;
   return result;

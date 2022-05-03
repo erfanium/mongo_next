@@ -34,7 +34,7 @@ export interface BSONSerializeOptions
   extends
     Omit<Bson.SerializeOptions, "index">,
     Omit<
-    Bson.DeserializeOptions,
+      Bson.DeserializeOptions,
       | "evalFunctions"
       | "cacheFunctions"
       | "cacheFunctionsCrc32"

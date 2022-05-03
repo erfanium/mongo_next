@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+import { Crypto } from "../../../deps.ts";
 
 import { Binary, Document } from "../../bson.ts";
 import { saslprep } from "https://deno.land/x/mongo@v0.29.4/src/utils/saslprep/mod.ts";
@@ -45,7 +45,7 @@ class ScramSHA extends AuthProvider {
       );
     }
 
-    crypto.randomBytes(24, (err, nonce) => {
+    Crypto.randomBytes(24, (err, nonce) => {
       if (err) {
         return callback(err);
       }
@@ -55,7 +55,7 @@ class ScramSHA extends AuthProvider {
 
       const request = Object.assign({}, handshakeDoc, {
         speculativeAuthenticate: Object.assign(
-          makeFirstMessage(cryptoMethod, credentials, nonce),
+          makeFirstMessage(cryptoMethod, credentials, nonce!),
           {
             db: credentials.source,
           },
@@ -231,7 +231,7 @@ function continueScramConversation(
   // Set up start of proof
   const withoutProof = `c=biws,r=${rnonce}`;
   const saltedPassword = HI(
-    processedPassword,
+    processedPassword as string,
     Buffer.from(salt, "base64"),
     iterations,
     cryptoMethod,
@@ -248,7 +248,7 @@ function continueScramConversation(
     ",",
   );
 
-  const clientSignature = HMAC(cryptoMethod, storedKey, authMessage);
+  const clientSignature = HMAC(cryptoMethod, storedKey as Buffer, authMessage);
   const clientProof = `p=${xor(clientKey, clientSignature)}`;
   const clientFinal = [withoutProof, clientProof].join(",");
 
@@ -321,7 +321,7 @@ function passwordDigest(username: string, password: string) {
     throw new MongoInvalidArgumentError("Password cannot be empty");
   }
 
-  const md5 = crypto.createHash("md5");
+  const md5 = Crypto.createHash("md5");
   md5.update(`${username}:mongo:${password}`, "utf8");
   return md5.digest("hex");
 }
@@ -347,11 +347,11 @@ function xor(a: Buffer, b: Buffer) {
 }
 
 function H(method: CryptoMethod, text: Buffer) {
-  return crypto.createHash(method).update(text).digest();
+  return Crypto.createHash(method).update(text).digest();
 }
 
 function HMAC(method: CryptoMethod, key: Buffer, text: Buffer | string) {
-  return crypto.createHmac(method, key).update(text).digest();
+  return Crypto.createHmac(method, key).update(text).digest();
 }
 
 interface HICache {

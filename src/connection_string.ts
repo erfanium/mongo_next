@@ -1,5 +1,4 @@
-import * as dns from "dns";
-import * as fs from "fs";
+import { Dns, Fs } from "../deps.ts";
 import { ConnectionString } from "../deps.ts";
 
 import type { Document } from "./bson.ts";
@@ -95,7 +94,7 @@ export function resolveSRVRecord(
 
   // Resolve the SRV record and use the result as the list of hosts to connect to.
   const lookupAddress = options.srvHost;
-  dns.resolveSrv(
+  Dns.resolveSrv(
     `_${options.srvServiceName}._tcp.${lookupAddress}`,
     (err, addresses) => {
       if (err) return callback(err);
@@ -124,7 +123,7 @@ export function resolveSRVRecord(
       }
 
       // Resolve TXT record and add options from there if they exist.
-      dns.resolveTxt(lookupAddress, (err, record) => {
+      Dns.resolveTxt(lookupAddress, (err, record) => {
         if (err) {
           if (err.code !== "ENODATA" && err.code !== "ENOTFOUND") {
             return callback(err);
@@ -1215,25 +1214,25 @@ export const OPTIONS = {
   sslCA: {
     target: "ca",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   sslCRL: {
     target: "crl",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   sslCert: {
     target: "cert",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   sslKey: {
     target: "key",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   sslPass: {
@@ -1265,19 +1264,19 @@ export const OPTIONS = {
   tlsCAFile: {
     target: "ca",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   tlsCertificateFile: {
     target: "cert",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   tlsCertificateKeyFile: {
     target: "key",
     transform({ values: [value] }) {
-      return fs.readFileSync(String(value), { encoding: "ascii" });
+      return Fs.readFileSync(String(value), { encoding: "ascii" });
     },
   },
   tlsCertificateKeyFilePassword: {

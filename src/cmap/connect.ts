@@ -1,8 +1,4 @@
-import type { Socket, SocketConnectOpts } from "net";
-import * as net from "net";
-import type { ConnectionOptions as TLSConnectionOpts, TLSSocket } from "tls";
-import * as tls from "tls";
-import { nextTick } from "../../deps.ts";
+import { Net, nextTick, Tls } from "../../deps.ts";
 
 import type { Document } from "../bson.ts";
 import { Int32 } from "../bson.ts";
@@ -57,7 +53,7 @@ const AUTH_PROVIDERS = new Map<AuthMechanism | string, AuthProvider>([
 ]);
 
 /** @public */
-export type Stream = Socket | TLSSocket;
+export type Stream = Net.Socket | Tls.Socket;
 
 export function connect(
   options: ConnectionOptions,
@@ -332,7 +328,7 @@ function parseConnectOptions(options: ConnectionOptions): SocketConnectOpts {
     throw new MongoInvalidArgumentError('Option "hostAddress" is required');
   }
 
-  const result: Partial<net.TcpNetConnectOpts & net.IpcNetConnectOpts> = {};
+  const result: Partial<Net.TcpNetConnectOpts & Net.IpcNetConnectOpts> = {};
   for (const name of LEGAL_TCP_SOCKET_OPTIONS) {
     if (options[name] != null) {
       (result as Document)[name] = options[name];
@@ -358,8 +354,8 @@ function parseConnectOptions(options: ConnectionOptions): SocketConnectOpts {
 
 type MakeConnectionOptions = ConnectionOptions & { existingSocket?: Stream };
 
-function parseSslOptions(options: MakeConnectionOptions): TLSConnectionOpts {
-  const result: TLSConnectionOpts = parseConnectOptions(options);
+function parseSslOptions(options: MakeConnectionOptions): Tls.ConnectionOpts {
+  const result: Tls.ConnectionOpts = parseConnectOptions(options);
   // Merge in valid SSL options
   for (const name of LEGAL_TLS_SOCKET_OPTIONS) {
     if (options[name] != null) {
@@ -372,7 +368,7 @@ function parseSslOptions(options: MakeConnectionOptions): TLSConnectionOpts {
   }
 
   // Set default sni servername to be the same as host
-  if (result.servername == null && result.host && !net.isIP(result.host)) {
+  if (result.servername == null && result.host && !Net.isIP(result.host)) {
     result.servername = result.host;
   }
 
@@ -426,7 +422,7 @@ function makeConnection(
   }
 
   if (useTLS) {
-    const tlsSocket = tls.connect(parseSslOptions(options));
+    const tlsSocket = Tls.connect(parseSslOptions(options));
     if (typeof tlsSocket.disableRenegotiation === "function") {
       tlsSocket.disableRenegotiation();
     }
@@ -437,7 +433,7 @@ function makeConnection(
     // gives us all we need out of the box).
     socket = existingSocket;
   } else {
-    socket = net.createConnection(parseConnectOptions(options));
+    socket = Net.createConnection(parseConnectOptions(options));
   }
 
   socket.setKeepAlive(keepAlive, keepAliveInitialDelay);
@@ -511,7 +507,7 @@ function makeSocks5Connection(
         return callback(err);
       }
 
-      const destination = parseConnectOptions(options) as net.TcpNetConnectOpts;
+      const destination = parseConnectOptions(options) as Net.TcpNetConnectOpts;
       if (
         typeof destination.host !== "string" ||
         typeof destination.port !== "number"

@@ -1,6 +1,4 @@
-import * as crypto from "crypto";
-import * as http from "http";
-import * as url from "url";
+import { Crypto, Http, Url } from "../../../deps.ts";
 
 import type { Binary, BSONSerializeOptions } from "../../bson.ts";
 import * as BSON from "../../bson.ts";
@@ -80,7 +78,7 @@ export class MongoDBAWS extends AuthProvider {
       : undefined;
 
     const db = credentials.source;
-    crypto.randomBytes(32, (err, nonce) => {
+    Crypto.randomBytes(32, (err, nonce) => {
       if (err) {
         callback(err);
         return;
@@ -116,7 +114,7 @@ export class MongoDBAWS extends AuthProvider {
         }
 
         if (
-          serverNonce.compare(nonce, 0, nonce.length, 0, nonce.length) !== 0
+          serverNonce.compare(nonce, 0, nonce!.length, 0, nonce!.length) !== 0
         ) {
           // TODO(NODE-3483)
           callback(
@@ -212,9 +210,11 @@ function makeTempCredentials(
 
   // If the environment variable AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
   // is set then drivers MUST assume that it was set by an AWS ECS agent
-  if (process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI) {
+  if (Deno.env.get("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")) {
     request(
-      `${AWS_RELATIVE_URI}${process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI}`,
+      `${AWS_RELATIVE_URI}${
+        Deno.env.get("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")
+      }`,
       undefined,
       (err, res) => {
         if (err) return callback(err);
@@ -273,7 +273,7 @@ interface RequestOptions {
   json?: boolean;
   method?: string;
   timeout?: number;
-  headers?: http.OutgoingHttpHeaders;
+  headers?: any;
 }
 
 function request(
@@ -287,11 +287,11 @@ function request(
       timeout: 10000,
       json: true,
     },
-    url.parse(uri),
+    Url.parse(uri, false, false),
     _options,
   );
 
-  const req = http.request(options, (res) => {
+  const req = Http.request(options, (res) => {
     res.setEncoding("utf8");
 
     let data = "";

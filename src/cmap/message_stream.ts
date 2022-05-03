@@ -1,4 +1,4 @@
-import { DuplexOptions, Stream, Buffer } from "../../deps.ts";
+import { Buffer, DuplexOptions, Stream } from "../../deps.ts";
 
 import type { BSONSerializeOptions, Document } from "../bson.ts";
 import { MongoDecompressionError, MongoParseError } from "../error.ts";

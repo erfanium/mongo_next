@@ -1,4 +1,4 @@
-import * as dns from "dns";
+import { Dns, isWindows } from "../../../deps.ts";
 
 import type { Document } from "../../bson.ts";
 import { KerberosClient } from "../../deps.ts";
@@ -137,9 +137,7 @@ function makeKerberosClient(
       }
 
       const spnHost = mechanismProperties.SERVICE_HOST ?? host;
-      let spn = `${serviceName}${
-        process.platform === "win32" ? "/" : "@"
-      }${spnHost}`;
+      let spn = `${serviceName}${isWindows ? "/" : "@"}${spnHost}`;
       if ("SERVICE_REALM" in mechanismProperties) {
         spn = `${spn}@${mechanismProperties.SERVICE_REALM}`;
       }
@@ -228,12 +226,12 @@ export function performGSSAPICanonicalizeHostName(
     mode === GSSAPICanonicalizationValue.forwardAndReverse
   ) {
     // Perform the lookup of the ip address.
-    dns.lookup(host, (error, address) => {
+    Dns.lookup(host, (error, address) => {
       // No ip found, return the error.
       if (error) return callback(error);
 
       // Perform a reverse ptr lookup on the ip address.
-      dns.resolvePtr(address, (err, results) => {
+      Dns.resolvePtr(address, (err, results) => {
         // This can error as ptr records may not exist for all ips. In this case
         // fallback to a cname lookup as dns.lookup() does not return the
         // cname.
@@ -253,7 +251,7 @@ export function performGSSAPICanonicalizeHostName(
 
 export function resolveCname(host: string, callback: Callback<string>): void {
   // Attempt to resolve the host name
-  dns.resolveCname(host, (err, r) => {
+  Dns.resolveCname(host, (err, r) => {
     if (err) return callback(undefined, host);
 
     // Get the first resolve host id
