@@ -1,5 +1,4 @@
 import type { Net, TLS } from "../deps.ts";
-import type { TLSSocketOptions } from "tls";
 
 import { BSONSerializeOptions, Document, resolveBSONOptions } from "./bson.ts";
 import { ChangeStream, ChangeStreamOptions } from "./change_stream.ts";
