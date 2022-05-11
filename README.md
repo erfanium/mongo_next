@@ -5,7 +5,7 @@
 - Use with `no-check` and `unstable` flags for now
 
 ```ts
-import { MongoClient } from "./src/index.ts";
+import { MongoClient } from "https://cdn.jsdelivr.net/gh/erfanium/mongo_next/src/index.ts";
 
 const client = new MongoClient("mongodb://localhost:27017/test");
 
