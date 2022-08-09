@@ -18,7 +18,6 @@ export {
   Double,
   Int32,
   Long,
-  Map,
   MaxKey,
   MinKey,
   ObjectId,

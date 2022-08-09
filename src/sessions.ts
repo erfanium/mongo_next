@@ -48,7 +48,8 @@ import {
   now,
   uuidV4,
 } from "./utils.ts";
-import { Buffer } from "../deps.ts";
+import { Buffer, equals } from "../deps.ts";
+import { BinarySizes, UUID } from "../bson.ts";
 
 const minWireVersionForShardedTransactions = 8;
 
@@ -387,7 +388,7 @@ export class ClientSession extends TypedEventEmitter<ClientSessionEvents> {
       return false;
     }
 
-    return this.id.id.buffer.equals(session.id.id.buffer);
+    return equals(this.id.id.buffer, session.id.id.buffer);
   }
 
   /**
@@ -871,7 +872,9 @@ export class ServerSession {
 
   /** @internal */
   constructor() {
-    this.id = { id: new Binary(uuidV4(), Binary.SUBTYPE_UUID) };
+    this.id = {
+      id: new Binary(UUID.generate(), BinarySizes.SUBTYPE_UUID),
+    };
     this.lastUse = now();
     this.txnNumber = 0;
     this.isDirty = false;
@@ -902,7 +905,7 @@ export class ServerSession {
     const idBytes = Buffer.from(arrayBuffer);
     idBytes.set(serverSession.id.id.buffer);
 
-    const id = new Binary(idBytes, serverSession.id.id.sub_type);
+    const id = new Binary(idBytes, serverSession.id.id.subType);
 
     // Manual prototype construction to avoid modifying the constructor of this class
     return Object.setPrototypeOf(

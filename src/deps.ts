@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import type { deserialize, Document, serialize } from "./bson.ts";
+import type { Buffer } from "../deps.ts";
 import type { ProxyOptions } from "./cmap/connection.ts";
 import { MongoMissingDependencyError } from "./error.ts";
 import type { MongoClient } from "./mongo_client.ts";

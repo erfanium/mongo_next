@@ -383,7 +383,7 @@ function HI(
   }
 
   // generate the salt
-  const saltedData = crypto.pbkdf2Sync(
+  const saltedData = Crypto.pbkdf2Sync(
     data,
     salt,
     iterations,
@@ -406,8 +406,8 @@ function compareDigest(lhs: Buffer, rhs: Uint8Array) {
     return false;
   }
 
-  if (typeof crypto.timingSafeEqual === "function") {
-    return crypto.timingSafeEqual(lhs, rhs);
+  if (typeof Crypto.timingSafeEqual === "function") {
+    return Crypto.timingSafeEqual(lhs, rhs);
   }
 
   let result = 0;
